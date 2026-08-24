@@ -113,6 +113,7 @@ Input fields (defined in [.actor/input_schema.json](.actor/input_schema.json)):
 Useful flags:
 - `apify run` (no `--input`) — reuses whatever's already saved in `storage/key_value_stores/default/INPUT.json`
 - `apify run --purge --input '{...}'` — wipes local storage (dataset/key-value store/request queue) before the run, so output from a previous run doesn't linger
+    - ex: `apify run --input '{"year": 2026, "office": "s", "state": "MI"}'`
 - `apify run --input-file ./some-input.json` — read input from a file instead of inline JSON
 
 ### 9. Push to Apify
