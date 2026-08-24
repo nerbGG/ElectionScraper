@@ -1,0 +1,32 @@
+{
+    "$schema": "https://apify.com/schemas/v1/input.ide.json",
+    "title": "Python Crawlee BeautifulSoup Scraper",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "year":{
+            "title": "Election year",
+            "type":"integer",
+            "description": "Year that the election is taking place",
+            "default":2026
+        },
+        "office":{
+            "title":"Office",
+            "type":"string",
+            "description":"Type of office (senate, house, presidential)",
+            "default": "s",
+            "editor":"select",
+            "enum":["s","p","h"],
+            "enumTitles": ["Senate","Presidential","House"]
+        },
+        "state":{
+            "title": "state",
+            "type":"string",
+            "description": "State user lives in",
+            "editor": "select",
+            "enum": ["MA", "MI", "OK"],
+            "enumTitles": ["Massachussetts", "Michigan", "Oklahoma"]
+        }
+    },
+    "required": ["year","office", "state"]
+}
