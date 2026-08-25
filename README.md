@@ -65,16 +65,7 @@ This opens an interactive flow to authenticate your Apify account and stores the
 locally (`~/.apify/auth.json`) for use by every other `apify` command below. To log in
 non-interactively instead (e.g. in CI), pass a token: `apify login --token <your-api-token>`.
 
-### 5. Pull the Actor
-
-Syncs your local copy with whatever's currently deployed on the Apify platform, in case the
-platform version is ahead of what's in this repo (e.g. edited via the Apify Console UI):
-
-```bash
-apify pull nerb1x/wiki-elections-scraper
-```
-
-### 6. Create a Python virtual environment
+### 5. Create a Python virtual environment
 
 ```bash
 python -m venv .venv
@@ -90,13 +81,13 @@ source .venv/bin/activate
 .venv\Scripts\Activate.ps1
 ```
 
-### 7. Install dependencies
+### 6. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 8. Run the Actor locally
+### 7. Run the Actor locally
 
 ```bash
 apify run --input '{"year": 2026, "office": "s", "state": "MI"}'
@@ -116,7 +107,7 @@ Useful flags:
     - ex: `apify run --input '{"year": 2026, "office": "s", "state": "MI"}'`
 - `apify run --input-file ./some-input.json` — read input from a file instead of inline JSON
 
-### 9. Push to Apify
+### 8. Push to Apify
 
 Once your changes are ready, deploy the current code to the Apify platform:
 
