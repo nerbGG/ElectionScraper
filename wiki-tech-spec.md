@@ -1,25 +1,36 @@
 # Tech Spec: Wikipedia Election Scraper (Apify Actor)
 
-**Version:** 0.2
+**Version:** 0.3
 **Creator:** Nel Barthelemy
-**Status:** Draft — v1 build scope is `race_candidates` only; `state_all` and
-`candidate_search` are designed below for v2, not being built yet.
+**Status:** Draft — four-phase roadmap (v1–v4, see §1). v1 build scope is `race_candidates`,
+Senate only. v3/v4 (`state_all`/`candidate_search`) are fully designed below; v2 (`race_candidates`
+expanded to non-Senate offices) is scoped but not yet designed.
 **Last Updated:** 2026-08-19
 
 ## 1. Overview
 
-A standalone Apify Actor with three structured query modes, all sourced live from Wikipedia.
-**Only mode 2 is being built for v1** — modes 1 and 3 are designed in full here (they were
-explored and verified live this session) so v2 is a known quantity, not a redesign, but they
-are explicitly deferred:
+A standalone Apify Actor with three structured query modes, all sourced live from Wikipedia,
+built out across four phases:
 
-1. **`state_all`** *(v2, designed/deferred)* — given a state (+ cycle), return every election
-   happening in that state.
-2. **`race_candidates`** *(v1, build target)* — given a state + office + cycle, return the
-   current candidate list (name, party, status, short bio) for that specific race. This was
-   the original v0.1 scope.
-3. **`candidate_search`** *(v2, designed/deferred)* — given a candidate name, return which race
-   they're running in plus basic bio info.
+| Phase | Mode | Scope | Status |
+|---|---|---|---|
+| **v1** | `race_candidates` | U.S. Senate only | **Build target** |
+| **v2** | `race_candidates` | Expanded to other offices (House, Governor, etc.) | Scoped, not designed |
+| **v3** | `state_all` | All elections in a state | Designed, deferred |
+| **v4** | `candidate_search` | Candidate name → race + bio | Designed, deferred |
+
+v3 and v4 were designed in full this session (explored and verified live against real Wikipedia
+data) so they're a known quantity when their turn comes, not a redesign — but nothing beyond v1
+is being built yet.
+
+The three modes themselves:
+
+1. **`race_candidates`** — given a state + office + cycle, return the current candidate list
+   (name, party, status, short bio) for that specific race. This was the original v0.1 scope.
+   Senate-only in v1; other offices added in v2.
+2. **`state_all`** — given a state (+ cycle), return every election happening in that state. v3.
+3. **`candidate_search`** — given a candidate name, return which race they're running in plus
+   basic bio info. v4.
 
 Sold on the Apify Store as a paid scraper, targeting developers, researchers, and other
 applications that need normalized election data without building their own Wikipedia-parsing
@@ -46,7 +57,7 @@ not an oversight — worth remembering if code or docs are ever shared between t
 
 **v1 (build now):**
 - Given a state, office, and election cycle, return the current candidate list for that race
-  (`race_candidates`)
+  (`race_candidates`) — **U.S. Senate only**
 - Source data live from Wikipedia (MediaWiki Action API), not a static/stale copy
 - Distinguish real, current candidates (`declared`/`runoff_pending`/`nominee`) from primary
   losers, withdrawals, and other dropped statuses — same filtering logic as the main app
@@ -54,31 +65,44 @@ not an oversight — worth remembering if code or docs are ever shared between t
   represented as `party: null`, not a fabricated value
 - Cheap enough per-query (via caching) to be viable at Apify's pay-per-event pricing
 
-**v2 (designed, deferred):**
+**v2 (scoped, not designed):**
+- Same `race_candidates` mode, expanded to non-Senate offices (House, Governor, state
+  legislature, local) — new title-template patterns and per-office testing required, not
+  designed yet (§3, §8).
+
+**v3 (designed, deferred):**
 - Given a state (+ cycle), return every election taking place in that state (`state_all`)
+
+**v4 (designed, deferred):**
 - Given a candidate name, return which race they're running in plus basic bio info
   (`candidate_search`)
 
 ## 3. Scope
 
 **In scope for v1:**
-- Single query mode: `race_candidates` (§5, §6.2, §7.2). Explicit `mode` field is still part
-  of the input shape even with one mode, so v2 can add modes without a breaking change (§5).
-- **U.S. Senate only.** Expanding to House/Governor/state legislature/local requires new
-  title-template patterns and testing per office type that don't exist yet — revisit once
-  Senate coverage is proven across more than the ~4 races spot-checked so far (§8).
+- Single query mode: `race_candidates` (§5, §6.1, §7.1). Explicit `mode` field is still part
+  of the input shape even with one mode, so later versions can rely on it without a breaking
+  change (§5).
+- **U.S. Senate only.** Revisit non-Senate offices (v2, below) once Senate coverage is proven
+  across more than the ~4 races spot-checked so far (§8).
 - Current election cycle only (2026) — title pattern is unverified for past cycles.
 - Regular and special elections (confirmed live for the 2026 FL/OH specials)
 - Runoff handling (`runoff_pending` status, `runoff_date` field)
 
-**Designed but explicitly deferred to v2** (not being built now — see §6.1, §6.3, §7.1, §7.3
-for the full designs, kept here so v2 doesn't require re-deriving them):
-- `state_all` — all-offices-in-a-state lookup.
-- `candidate_search` — candidate-name lookup.
+**v2 — scoped, not yet designed:**
+- Non-Senate offices for `race_candidates` (House, Governor, state legislature, local) —
+  requires new title-template patterns and testing per office type that don't exist yet. Same
+  `mode: "race_candidates"` input shape, just a wider `office` enum — not a new mode.
+
+**v3/v4 — designed but explicitly deferred** (not being built now — see §6.2/§7.2 for
+`state_all` and §6.3/§7.3 for `candidate_search`, kept in full here so these versions don't
+require re-deriving the design when their turn comes):
+- v3: `state_all` — all-offices-in-a-state lookup.
+- v4: `candidate_search` — candidate-name lookup. As designed (§6.3), its category-membership
+  check is Senate-specific, matching v1's scope — broadening it to match v2's office range
+  would be a natural follow-on but isn't designed here.
 
 **Explicitly out of scope, no version targeted:**
-- Non-Senate offices for `race_candidates` and `candidate_search` (House, Governor, state
-  legislature, local) — planned expansion, not designed yet.
 - FEC cross-referencing / candidate ID matching — this product is Wikipedia-only by design.
 - Historical (pre-2026) cycles.
 
@@ -113,18 +137,19 @@ Wikipedia's API usage expectations — same practice used throughout this sessio
 
 ## 5. Input Schema
 
-Discriminated on `mode`. Only `race_candidates` is implemented in v1; `state_all` and
-`candidate_search` are shown for the v2 design and should not be built/exposed yet.
+Discriminated on `mode`. Only `race_candidates` (Senate-only `office` values) is implemented in
+v1; `state_all` and `candidate_search` are shown for their v3/v4 designs and should not be
+built/exposed yet. v2 doesn't add a new mode — it just widens `race_candidates`'s `office` enum.
 
 ```json
 { "mode": "race_candidates", "state": "Michigan", "office": "senate", "cycle": 2026 }
 ```
 ```json
-// v2 — designed, not built
+// v3 — designed, not built
 { "mode": "state_all", "state": "Michigan", "cycle": 2026 }
 ```
 ```json
-// v2 — designed, not built
+// v4 — designed, not built
 { "mode": "candidate_search", "name": "Abdul El-Sayed", "cycle": 2026 }
 ```
 
@@ -135,10 +160,10 @@ crosswalk (same lookup already flagged as needed infrastructure in the main app'
 
 ## 6. Pipelines
 
-### 6.2 `race_candidates` — **v1 build target**
+### 6.1 `race_candidates` — **v1 build target** (v2 expands office scope)
 
-*(This is the original v0.1 pipeline — Senate-only, unchanged. Renumbered to 6.2 to stay
-aligned with §5/§7 across both v1 and v2 modes.)*
+*(This is the original v0.1 pipeline — Senate-only. v2 will need to generalize the title
+templates in steps 2–3 per office type; not designed yet, see §3.)*
 
 1. Normalize `state` to its full name.
 2. Check a maintained per-cycle config (e.g. `{ 2026: ["FL", "OH"] }`) to determine whether
@@ -164,11 +189,11 @@ aligned with §5/§7 across both v1 and v2 modes.)*
 9. Cache the parsed result, keyed on `(state, office, cycle)`, with a TTL that expires once
    that race's own recorded primary/runoff date has passed. This keeps Wikipedia request volume
    reasonable and keeps marginal cost per paid Apify run close to zero.
-10. Return the structured result (§7.2).
+10. Return the structured result (§7.1).
 
 ---
 
-### 6.1 `state_all` — **v2, designed/deferred**
+### 6.2 `state_all` — **v3, designed/deferred**
 
 1. Normalize `state` to its full name.
 2. Construct the Wikipedia title: `"{cycle} {state} elections"` (confirmed live for Michigan —
@@ -176,19 +201,19 @@ aligned with §5/§7 across both v1 and v2 modes.)*
    Governor / Secretary of State / Attorney General, Legislature → State Senate / State House,
    Judiciary → Supreme Court, plus local boards and ballot initiatives).
 3. Fetch via `prop=extracts`. If the title 404s, fall back to `list=search`, same
-   `title_matched_via` flagging as §6.2 step 4. **Not yet verified whether this title pattern
+   `title_matched_via` flagging as §6.1 step 4. **Not yet verified whether this title pattern
    holds for every state** — only Michigan spot-checked (§8).
 4. Heading-parse into a flat list of `{ office, race_title, source_url }` entries — one per
    race/section found (Senate, House, Governor, etc.), not full candidate lists.
 5. For any entry where `office == "senate"`, additionally set `resolvable_via:
-   "race_candidates"` so callers know that race can be queried in full via mode 2. All other
-   offices are out of scope for full resolution per §3 — return title/link only.
+   "race_candidates"` so callers know that race can be queried in full via the `race_candidates`
+   mode. Non-Senate entries are resolvable too once v2 ships — return title/link only until then.
 6. Cache keyed on `(state, cycle)`.
-7. Return the structured result (§7.1).
+7. Return the structured result (§7.2).
 
 ---
 
-### 6.3 `candidate_search` — **v2, designed/deferred**
+### 6.3 `candidate_search` — **v4, designed/deferred**
 
 1. Attempt a direct title fetch on `name` via `prop=extracts`. If it 404s or disambiguates,
    fall back to `list=search&srsearch={name}` and take the top hit, flagging
@@ -196,17 +221,19 @@ aligned with §5/§7 across both v1 and v2 modes.)*
 2. Fetch `prop=categories` on the resolved page. Confirm membership in
    `Category:Candidates in the {cycle} United States Senate elections`. **If absent, return a
    `not_found`/`no_match` result rather than guessing** — this category check is what keeps the
-   mode Senate-only per §3 and prevents returning a stale/irrelevant person page.
-3. Extract the race from intro prose via regex, matching the same two title patterns as §6.2
+   mode Senate-only per §3 and prevents returning a stale/irrelevant person page. (Widening this
+   to non-Senate offices, once v2 exists, would mean checking additional office-specific
+   categories — not designed here.)
+3. Extract the race from intro prose via regex, matching the same two title patterns as §6.1
    step 3 (regular and special): `"{cycle} United States Senate (special )?election in
    ({state})"`. **Confirmed live**: this sentence pattern is present and reliable (verified on
    Abdul El-Sayed's page: "...the Democratic nominee in the 2026 United States Senate election
    in Michigan"). If no match is found in the intro, scan the full extract before failing.
-4. Once `state` is resolved, optionally re-run §6.2 to get the candidate's current `status`
+4. Once `state` is resolved, optionally re-run §6.1 to get the candidate's current `status`
    within that race (the candidate's own page doesn't reliably state their status — e.g.
    "nominee" vs. "declared" — as cleanly as the race page does).
 5. Pull `party` from the infobox (`political_party` field via `action=parse&prop=wikitext`),
-   normalized the same way as §6.2's heading-derived party values for consistency.
+   normalized the same way as §6.1's heading-derived party values for consistency.
 6. Cache keyed on `(name, cycle)`.
 7. Return the structured result (§7.3).
 
@@ -218,7 +245,7 @@ Each mode returns `source_license` (`"CC BY-SA 4.0"`), `title_matched_via`
 for a direct title match with cleanly-headed/parseable content, `needs_review` when the search
 fallback was used or the expected structure didn't match cleanly.
 
-### 7.2 `race_candidates` — **v1 build target**
+### 7.1 `race_candidates` — **v1 build target** (v2 expands office scope)
 
 ```json
 {
@@ -238,7 +265,7 @@ fallback was used or the expected structure didn't match cleanly.
 
 ---
 
-### 7.1 `state_all` — **v2, designed/deferred**
+### 7.2 `state_all` — **v3, designed/deferred**
 
 ```json
 {
@@ -252,7 +279,7 @@ fallback was used or the expected structure didn't match cleanly.
 }
 ```
 
-### 7.3 `candidate_search` — **v2, designed/deferred**
+### 7.3 `candidate_search` — **v4, designed/deferred**
 
 ```json
 {
@@ -326,12 +353,14 @@ point.
 
 ## 10. Open Questions
 
-- Exact per-query price point — blocked on confirming Apify's revenue-share cut. Three modes
-  may warrant different per-event pricing (`state_all` is a lighter payload than
+- Exact per-query price point — blocked on confirming Apify's revenue-share cut. Different
+  phases may warrant different per-event pricing (`state_all` is a lighter payload than
   `race_candidates`/`candidate_search`).
-- When to expand `race_candidates`/`candidate_search` beyond Senate to House/Governor/etc.
-  (explicitly deferred per §3, not if-ever).
-- Whether historical-cycle support (pre-2026) is worth adding, and whether any of the three
-  title construction patterns even hold for older cycles — untested.
-- Whether `state_all` should attempt to resolve non-Senate races too once other offices get
-  their own `race_candidates`-equivalent pipelines, or stay link-only for those permanently.
+- v2 design: what new title-template patterns and per-office parsing rules non-Senate offices
+  need — not designed yet, just scoped (§3).
+- Whether historical-cycle support (pre-2026) is worth adding, and whether any of the title
+  construction patterns even hold for older cycles — untested.
+- Whether `state_all` (v3) should attempt to resolve non-Senate races too once v2 ships, or
+  stay link-only for those permanently.
+- Whether `candidate_search` (v4) should widen its category check to non-Senate offices once
+  v2 ships, matching `race_candidates`'s scope at that point (§3, §6.3 step 2).
