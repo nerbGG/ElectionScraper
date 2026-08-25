@@ -1,118 +1,159 @@
-# Python Crawlee & BeautifulSoup Actor Template
+# Wikipedia Election Scraper (Apify Actor)
 
-<!-- This is an Apify template readme -->
+An [Apify Actor](https://apify.com/actors) that looks up a U.S. Senate race by state, office,
+and election cycle, and returns the current candidate list (name, party, status, short bio)
+sourced live from Wikipedia. It's built to eventually be sold on the Apify Store to developers
+and researchers who need normalized election-candidate data without building their own
+Wikipedia-parsing pipeline.
 
-This template example was built with [Crawlee for Python](https://crawlee.dev/python) to scrape data from a website using [Beautiful Soup](https://pypi.org/project/beautifulsoup4/) wrapped into [BeautifulSoupCrawler](https://crawlee.dev/python/api/class/BeautifulSoupCrawler).
+The current build target is the `race_candidates` query mode only (U.S. Senate, 2026 cycle).
+Two additional query modes — an all-elections-in-a-state lookup and a candidate-name search —
+are fully designed but intentionally deferred. See [wiki-tech-spec.md](wiki-tech-spec.md) for
+the full spec, data-source notes, and known risks/limitations.
 
-## Quick Start
+## Prerequisites
 
-Once you've installed the dependencies, start the Actor:
-
-```bash
-apify run
-```
-
-Once your Actor is ready, you can push it to the Apify Console:
-
-```bash
-apify login # first, you need to log in if you haven't already done so
-
-apify push
-```
-
-## Project Structure
-
-```text
-.actor/
-├── actor.json # Actor config: name, version, env vars, runtime settings
-├── dataset_schema.json # Structure and representation of data produced by an Actor
-├── input_schema.json # Input validation & Console form definition
-└── output_schema.json # Specifies where an Actor stores its output
-src/
-└── main.py # Actor entry point and orchestrator
-storage/ # Local storage (mirrors Cloud during development)
-├── datasets/ # Output items (JSON objects)
-├── key_value_stores/ # Files, config, INPUT
-└── request_queues/ # Pending crawl requests
-Dockerfile # Container image definition
-```
-
-For more information, see the [Actor definition](https://docs.apify.com/platform/actors/development/actor-definition) documentation.
-
-## How it works
-
-This code is a Python script that uses BeautifulSoup to scrape data from a website. It then stores the website titles in a dataset.
-
-- The crawler starts with URLs provided from the input `startUrls` field defined by the input schema. Number of scraped pages is limited by `maxPagesPerCrawl` field from the input schema.
-- The crawler uses `requestHandler` for each URL to extract the data from the page with the BeautifulSoup library and to save the title and URL of each page to the dataset. It also logs out each result that is being saved.
-
-## What's included
-
-- **[Apify SDK](https://docs.apify.com/sdk/python/)** - toolkit for building [Actors](https://apify.com/actors)
-- **[Crawlee for Python](https://crawlee.dev/python/)** - web scraping and browser automation library
-- **[Input schema](https://docs.apify.com/platform/actors/development/input-schema)** - define and easily validate a schema for your Actor's input
-- **[Dataset](https://docs.apify.com/sdk/python/docs/concepts/storages#working-with-datasets)** - store structured data where each object stored has the same attributes
-- **[Beautiful Soup](https://pypi.org/project/beautifulsoup4/)** - a library for pulling data out of HTML and XML files
-- **[Proxy configuration](https://docs.apify.com/platform/proxy)** - rotate IP addresses to prevent blocking
-
-## Resources
-
-- [Quick Start](https://docs.apify.com/platform/actors/development/quick-start) guide for building your first Actor
-- [Video introduction to Python SDK](https://www.youtube.com/watch?v=C8DmvJQS3jk)
-- [Webinar introducing to Crawlee for Python](https://www.youtube.com/live/ip8Ii0eLfRY)
-- [Apify Python SDK documentation](https://docs.apify.com/sdk/python/)
-- [Crawlee for Python documentation](https://crawlee.dev/python/docs/quick-start)
-- [Python tutorials in Academy](https://docs.apify.com/academy/python)
-- [Integration with Zapier](https://apify.com/integrations), Make, Google Drive and others
-- [Video guide on getting data using Apify API](https://www.youtube.com/watch?v=ViYYDHSBAKM)
-
-## Creating Actors with templates
-
-[How to create Apify Actors with web scraping code templates](https://www.youtube.com/watch?v=u-i-Korzf8w)
-
+- **Node.js** (18+) and npm — needed to install the Apify CLI
+- **Python** 3.11+ — needed to run the Actor itself
 
 ## Getting started
 
-For complete information [see this article](https://docs.apify.com/platform/actors/development#build-actor-at-apify-console). In short, you will:
+### 1. Clone the repo
 
-1. Build the Actor
-2. Run the Actor
+```bash
+git clone https://github.com/nerbGG/ElectionScraper.git
+cd ElectionScraper
+```
 
-## Pull the Actor for local development
+### 2. Install Node.js
 
-If you would like to develop locally, you can pull the existing Actor from Apify console using Apify CLI:
+The Apify CLI's npm install method (step 3) needs Node.js and npm on your machine first.
+Download and run the installer from [nodejs.org](https://nodejs.org) (LTS version), or use a
+version manager — [nvm](https://github.com/nvm-sh/nvm) on macOS/Linux,
+[nvm-windows](https://github.com/coreybutler/nvm-windows) on Windows. Verify it installed
+correctly:
 
-1. Install `apify-cli`
+```bash
+node --version
+npm --version
+```
 
-    **Using Homebrew**
+If you'd rather skip Node.js entirely, the Apify CLI also has a standalone install script
+(macOS/Linux/Windows) and a Homebrew formula — see step 3.
 
-    ```bash
-    brew install apify-cli
-    ```
+### 3. Install the Apify CLI
 
-    **Using NPM**
+```bash
+npm install -g apify-cli
+```
 
-    ```bash
-    npm -g install apify-cli
-    ```
+Other install methods (Homebrew, a standalone install script with no Node.js required) are
+listed in the [Apify CLI installation docs](https://docs.apify.com/cli/docs/installation).
+Verify it installed correctly:
 
-2. Pull the Actor by its unique `<ActorId>`, which is one of the following:
-    - unique name of the Actor to pull (e.g. "apify/hello-world")
-    - or ID of the Actor to pull (e.g. "E2jjCZBezvAZnX8Rb")
+```bash
+apify --version
+```
 
-    You can find both by clicking on the Actor title at the top of the page, which will open a modal containing both Actor unique name and Actor ID.
+### 4. Log in to Apify
 
-    This command will copy the Actor into the current directory on your local machine.
+```bash
+apify login
+```
 
-    ```bash
-    apify pull <ActorId>
-    ```
+This opens an interactive flow to authenticate your Apify account and stores the credentials
+locally (`~/.apify/auth.json`) for use by every other `apify` command below. To log in
+non-interactively instead (e.g. in CI), pass a token: `apify login --token <your-api-token>`.
 
-## Documentation reference
+### 5. Create a Python virtual environment
 
-To learn more about Apify and Actors, take a look at the following resources:
+```bash
+python -m venv .venv
+```
 
-- [Apify SDK for JavaScript documentation](https://docs.apify.com/sdk/js)
-- [Apify SDK for Python documentation](https://docs.apify.com/sdk/python)
-- [Apify Platform documentation](https://docs.apify.com/platform)
-- [Join our developer community on Discord](https://discord.com/invite/jyEM2PRvMU)
+Activate it:
+
+```bash
+# macOS/Linux
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+```
+
+### 6. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 7. Run the Actor locally
+
+```bash
+apify run --input '{"year": 2026, "office": "s", "state": "MI"}'
+```
+
+Input fields (defined in [.actor/input_schema.json](.actor/input_schema.json)):
+
+| Field    | Type    | Notes                                                              |
+|----------|---------|----------------------------------------------------------------------|
+| `year`   | integer | Election cycle. Defaults to `2026`.                                 |
+| `office` | string  | `"s"` (Senate), `"p"` (Presidential), or `"h"` (House).              |
+| `state`  | string  | Currently limited to `"MA"`, `"MI"`, `"OK"` — full 50-state support is pending the state-code crosswalk described in the spec. |
+
+Useful flags:
+- `apify run` (no `--input`) — reuses whatever's already saved in `storage/key_value_stores/default/INPUT.json`
+- `apify run --purge --input '{...}'` — wipes local storage (dataset/key-value store/request queue) before the run, so output from a previous run doesn't linger
+    - ex: `apify run --input '{"year": 2026, "office": "s", "state": "MI"}'`
+- `apify run --input-file ./some-input.json` — read input from a file instead of inline JSON
+
+### 8. Push to Apify
+
+Once your changes are ready, deploy the current code to the Apify platform:
+
+```bash
+apify push
+```
+
+This uploads the Actor per the settings in [.actor/actor.json](.actor/actor.json) and kicks off
+a build. Pass `--no-wait-for-finish` to return immediately instead of waiting for the build to
+complete.
+
+## Project structure
+
+```text
+.actor/
+├── actor.json          # Actor config: name, version, storage/schema references, Dockerfile path
+├── input_schema.json   # Defines the Actor's input fields, types, and defaults — also renders
+│                        #   the input form in the Apify Console
+├── dataset_schema.json # Defines how output items are displayed as a table in the Console's
+│                        #   "Output" tab (which fields show as columns, their format)
+└── output_schema.json  # Points the Console's Output tab at the dataset API endpoint
+my_actor/
+├── __main__.py          # Entry point invoked by `python -m my_actor` (see Dockerfile)
+├── main.py               # Actor logic: reads input, will run the Wikipedia fetch/parse
+│                          #   pipeline, and calls Actor.push_data()
+└── routes.py             # Crawlee request routing (scaffolded, not yet wired up)
+storage/                  # Local-only storage emulating the Apify platform, created by
+│                          #   `apify run`. NOT synced to the cloud — each `apify run` reads/writes
+│                          #   here instead of hitting real Apify storage.
+├── datasets/default/     # Every item passed to `Actor.push_data()` lands here as JSON —
+│                          #   this is the Actor's actual output
+├── key_value_stores/default/ # Holds INPUT.json (the input for the next `apify run`) plus any
+│                          #   other files/config the Actor reads or writes via Actor.set_value()
+└── request_queues/       # Pending crawl requests (used once the Crawlee pipeline is wired up)
+Dockerfile                # Container image definition used when the Actor runs on Apify
+requirements.txt          # Python dependencies
+wiki-tech-spec.md         # Source-of-truth spec: schema, pipeline, data source, known risks
+```
+
+**Note:** `main.py` currently just echoes the input straight back to the dataset — the actual
+Wikipedia-fetch/parse pipeline described in the spec isn't implemented yet, so a local run right
+now only confirms your input was received, not real candidate data.
+
+## Resources
+
+- [wiki-tech-spec.md](wiki-tech-spec.md) — full spec for this Actor
+- [Apify CLI reference](https://docs.apify.com/cli/docs/reference)
+- [Apify Python SDK documentation](https://docs.apify.com/sdk/python)
+- [Crawlee for Python documentation](https://crawlee.dev/python/docs/quick-start)
