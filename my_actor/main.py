@@ -44,7 +44,7 @@ async def main() -> None:
         year = actor_input.get('year', 2026)
         office = actor_input.get('office', 's')
         state = actor_input.get('state', 'MI')
-
+    
         data = {
             "year":year,
             "office":office,
@@ -79,3 +79,29 @@ async def main() -> None:
 
         # Run the crawler with the starting requests.
         # await crawler.run(start_urls)
+        
+# def check_state(state: str)-> str | None:
+#     all_states = [
+#         "alabama","alaska","arizona","arkansas","california","colorado","connecticut",
+#         "delaware","florida","georgia","hawaii","idaho","illinois","indiana","iowa","kansas",
+#         "kentucky","louisiana","maine","maryland","massachusetts","michigan","minnesota","mississippi",
+#         "missouri","montana","nebraska","nevada","new hampshire","new jersey","new mexico","new york",
+#         "north carolina","north dakota","ohio","oklahoma","oregon","pennsylvania","rhode island",
+#         "south carolina","south dakota","tennessee","texas","utah","vermont","virginia","washington",
+#         "west virginia","wisconsin","wyoming"
+#     ]
+#     abb_states = ["ak","al","ar","az","ca","co","ct","de","fl","ga","hi","ia","id","il","in","ks","ky",
+#     "la","ma","md","me","mi","mn","mo","ms","mt","nc","nd","ne","nh","nj","nm","nv","ny","oh","ok","or",
+#     "pa","ri","sc","sd","tn","tx","ut","va","vt","wa","wi","wv","wy"]
+
+#     state = state.lower()
+#     if len(state) == 2:
+#         try:
+#             index = abb_states.index(state)
+#         except ValueError:
+#             return None
+#         return all_states[index]
+
+#     if state in all_states:
+#         return state
+#     return None
