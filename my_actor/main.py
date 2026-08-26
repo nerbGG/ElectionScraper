@@ -11,14 +11,10 @@ from __future__ import annotations
 import asyncio
 
 from apify import Actor, Event
-from crawlee.crawlers import BeautifulSoupCrawler
-
-from .routes import router
 
 
 async def main() -> None:
     """Define a main entry point for the Apify Actor.
-
     This coroutine is executed using `asyncio.run()`, so it must remain an asynchronous function for proper execution.
     Asynchronous execution is required for communication with Apify platform, and it also enhances performance in
     the field of web scraping significantly.
@@ -40,18 +36,18 @@ async def main() -> None:
 
         # Retrieve the Actor input, and use default values if not provided.
         actor_input = await Actor.get_input() or {}
-        
-        year = actor_input.get('year', 2026)
-        office = actor_input.get('office', 's')
-        state = actor_input.get('state', 'MI')
+
+        year = actor_input.get("year", 2026)
+        office = actor_input.get("office", "s")
+        state = actor_input.get("state", "MI")
 
         data = {
-            "year":year,
-            "office":office,
-            "state":state,
+            "year": year,
+            "office": office,
+            "state": state,
         }
 
-         # Store the extracted data to the default dataset.
+        # Store the extracted data to the default dataset.
         await Actor.push_data(data)
 
         # await Actor.push_data({year,office,state})
@@ -74,7 +70,7 @@ async def main() -> None:
         #     # Limit the crawl to max requests. Remove or increase it for crawling all links.
         #     max_requests_per_crawl=10,
         #     # Set the request handler to the request router defined in routes.py.
-            # request_handler=router,
+        # request_handler=router,
         # )
 
         # Run the crawler with the starting requests.
