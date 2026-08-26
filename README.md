@@ -87,7 +87,29 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 7. Run the Actor locally
+### 7. Install the pre-commit git hook
+
+```bash
+pre-commit install
+```
+
+This wires up the hooks in [.pre-commit-config.yaml](.pre-commit-config.yaml) to run
+automatically on `git commit` (Ruff lint/format, whitespace/EOF checks, secret scanning). It's a
+one-time, per-clone setup step — installing the `pre-commit` package via step 6 does not do this
+on its own. The same checks also run in CI on every push/PR
+([.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml)), so skipping this step
+just means you'll find out about failures from CI instead of locally.
+
+### 8. Install the Ruff extension (recommended)
+
+Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
+(`charliermarsh.ruff`) in VS Code. It lints and formats Python using the same tool as the
+`ruff-check`/`ruff-format` pre-commit hooks (§ [.pre-commit-config.yaml](.pre-commit-config.yaml)),
+so what you see in the editor matches what runs at commit time. Format-on-save for `.py` files
+is already configured in this repo's [.vscode/settings.json](.vscode/settings.json) — no
+further setup needed once the extension is installed.
+
+### 9. Run the Actor locally
 
 ```bash
 apify run --input '{"year": 2026, "office": "s", "state": "MI"}'
@@ -107,7 +129,7 @@ Useful flags:
     - ex: `apify run --input '{"year": 2026, "office": "s", "state": "MI"}'`
 - `apify run --input-file ./some-input.json` — read input from a file instead of inline JSON
 
-### 8. Push to Apify
+### 10. Push to Apify
 
 Once your changes are ready, deploy the current code to the Apify platform:
 
