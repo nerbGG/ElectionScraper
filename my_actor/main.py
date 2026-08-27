@@ -39,7 +39,7 @@ async def main() -> None:
 
         year = actor_input.get("year", 2026)
         office = actor_input.get("office", "s")
-        state = actor_input.get("state", "MI")
+        state = actor_input["state"]
 
         data = {
             "year": year,
@@ -51,7 +51,7 @@ async def main() -> None:
         await Actor.push_data(data)
 
         # await Actor.push_data({year,office,state})
-        await Actor.exit()
+
         # start_urls = [
         #     url.get('url')
         #     for url in actor_input.get(
