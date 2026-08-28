@@ -139,7 +139,63 @@ apify push
 
 This uploads the Actor per the settings in [.actor/actor.json](.actor/actor.json) and kicks off
 a build. Pass `--no-wait-for-finish` to return immediately instead of waiting for the build to
-complete.
+complete. See [Managing Apify versions](#managing-apify-versions) below for choosing which
+version/tag a push goes to.
+
+## Managing Apify versions
+
+This section covers how the **Apify platform** tracks this Actor's versions and builds when you
+`apify push`/`apify pull` — a separate concept from this repo's own git history.
+
+> **Not the same as the spec's v1–v4.** Apify's `version` field (`.actor/actor.json`, format
+> `MAJOR.MINOR`, e.g. `0.1`) tracks *deployment/build history on the platform*.
+> [wiki-tech-spec.md](wiki-tech-spec.md)'s `v1`–`v4` track *feature scope* (Senate-only → all
+> offices → `state_all` → `candidate_search`). These two numbering schemes are independent and
+> won't stay in sync — shipping the spec's "v2" feature set does **not** mean the Apify version
+> should become `2.0` (that jump is reserved for a breaking change, see below, not a feature
+> addition).
+
+**Version format:** `version` in `.actor/actor.json` is `MAJOR.MINOR` only — there's no patch
+slot at that level (e.g. `"0.1"`, `"1.0"`, not `"0.1.2"`). Every build gets its own
+auto-incrementing `MAJOR.MINOR.BUILD` number (e.g. `1.2.345`), and multiple versions (`0.1`,
+`0.2`, ...) can exist on the platform at the same time, each with its own independent sequence
+of builds.
+
+**Pushing/pulling a specific version:**
+- `apify push` reads `version` from `.actor/actor.json` by default. Override it per-push with
+  `-v`/`--version=<value>` without editing the file.
+- `-f`/`--force` overrides a newer remote version if you need to push backwards or sideways.
+- `-b`/`--build-tag=<value>` tags the resulting build (see next section).
+- `apify pull -v <value>` fetches a specific version's code from the platform; without `-v`, it
+  pulls the highest version.
+
+**Build tags:** the default tag is `latest`, and each push under the same version
+auto-increments the build number (e.g. `0.1.1`, `0.1.2`, ...). Note that a tag is assigned when
+a build is *created* — Apify's docs don't document a way to retroactively move `latest` onto a
+build that was pushed earlier without a tag.
+
+**The workflow used in this project:** push intermediate builds freely while iterating, and once a batch of changes is actually ready, do one final `apify push` to update the version number (either Major or minor). In the apify console, run options let you pick which build/tag to run, and the Actor's Settings tab lets you update its default version.
+
+**When to bump the version:** for non-breaking, iterative changes, keep the same `MAJOR.MINOR`
+and let the build number auto-increment on each push. Bump `MAJOR` for a breaking change (e.g.
+`1.0` → `2.0`). Apify's own guidance on exactly when to bump `MINOR` specifically is thin —
+treat it as a judgment call, not a hard rule.
+
+```bash
+# Push the current code as version 0.1 (first real candidate build — the "0.1" here is
+# unrelated to the spec's "v1", see disambiguation note above)
+apify push --version 0.1
+
+# Pull the code for a specific platform version
+apify pull --version 0.1
+
+# Force-push over a newer remote version (use sparingly)
+apify push --version 0.1 --force
+```
+
+**Note:** `.actor/actor.json` still has template placeholder values from the original
+`python-crawlee-beautifulsoup` Actor template (`name: "my-actor"`, plus `title`/`description`) —
+worth updating before the first real Store-facing push.
 
 ## Project structure
 
