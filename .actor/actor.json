@@ -1,10 +1,11 @@
 {
     "$schema": "https://apify.com/schemas/v1/actor.ide.json",
+    "version": "0.0",
     "actorSpecification": 1,
-    "name": "my-actor",
+    "name": "wiki-election-scraper",
+    "actorId": "nerb1x/wiki-elections-scraper",
     "title": "Getting started with Python Crawlee and BeautifulSoup",
     "description": "Scrapes titles of websites using Crawlee and BeautifulSoup.",
-    "version": "0.0",
     "buildTag": "latest",
     "meta": {
         "templateId": "python-crawlee-beautifulsoup",
