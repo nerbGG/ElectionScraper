@@ -1,32 +1,36 @@
 {
     "$schema": "https://apify.com/schemas/v1/input.ide.json",
     "title": "Python Crawlee BeautifulSoup Scraper",
+    "description": "Note: Additional input fields for year and office configuration are planned but omitted in this version.",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
-        "year":{
-            "title": "Election year",
-            "type":"integer",
-            "description": "Year that the election is taking place",
-            "default":2026
-        },
-        "office":{
-            "title":"Office",
-            "type":"string",
-            "description":"Type of office (senate, house, presidential)",
-            "default": "s",
-            "editor":"select",
-            "enum":["s","p","h"],
-            "enumTitles": ["Senate","Presidential","House"]
-        },
-        "state":{
-            "title": "state",
-            "type":"string",
-            "description": "State user lives in",
+        "state": {
+            "title": "State",
+            "type": "string",
+            "description": "US state for the election",
             "editor": "select",
-            "enum": ["MA", "MI", "OK"],
-            "enumTitles": ["Massachussetts", "Michigan", "Oklahoma"]
+            "prefill": "MI",
+            "enum": [
+                "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+                "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+                "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+                "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+                "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+            ],
+            "enumTitles": [
+                "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
+                "Connecticut", "Delaware", "Florida", "Georgia", "Hawaii", "Idaho",
+                "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky", "Louisiana",
+                "Maine", "Maryland", "Massachusetts", "Michigan", "Minnesota",
+                "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada",
+                "New Hampshire", "New Jersey", "New Mexico", "New York",
+                "North Carolina", "North Dakota", "Ohio", "Oklahoma", "Oregon",
+                "Pennsylvania", "Rhode Island", "South Carolina", "South Dakota",
+                "Tennessee", "Texas", "Utah", "Vermont", "Virginia", "Washington",
+                "West Virginia", "Wisconsin", "Wyoming"
+            ]
         }
     },
-    "required": ["year","office", "state"]
+    "required": ["state"]
 }
