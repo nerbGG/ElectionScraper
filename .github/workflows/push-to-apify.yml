@@ -1,0 +1,23 @@
+name: Label-Triggered Push to Apify
+
+on:
+  pull_request:
+    types: [labeled] # Only triggers when a label is attached to the PR
+
+jobs:
+  deploy:
+    if: github.event.label.name == 'deploy-to-apify'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          # Fetches the specific branch of the PR instead of the target branch (e.g., main)
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Push Actor to Apify
+        uses: apify/push-actor-action@v1
+        with:
+          token: ${{ secrets.APIFY_TOKEN }}
+          # Dynamically tags the build with the PR number (e.g., pr-42) so it doesn't overwrite 'latest'
+          build-tag: pr-${{ github.event.pull_request.number }}
