@@ -9,6 +9,7 @@ jobs:
     if: github.event.label.name == 'deploy-to-apify'
     runs-on: ubuntu-latest
     permissions:
+      contents: read # Required so actions/checkout can fetch the repo
       pull-requests: write # Required so the job can post a comment to your PR
 
     steps:
