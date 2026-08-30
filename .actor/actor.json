@@ -1,6 +1,6 @@
 {
     "$schema": "https://apify.com/schemas/v1/actor.ide.json",
-    "version": "0.0",
+    "version": "0.2",
     "actorSpecification": 1,
     "name": "wiki-election-scraper",
     "actorId": "nerb1x/wiki-elections-scraper",
