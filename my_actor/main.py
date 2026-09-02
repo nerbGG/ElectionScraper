@@ -49,29 +49,3 @@ async def main() -> None:
 
         # Store the extracted data to the default dataset.
         await Actor.push_data(data)
-
-        # await Actor.push_data({year,office,state})
-
-        # start_urls = [
-        #     url.get('url')
-        #     for url in actor_input.get(
-        #         'start_urls',
-        #         [{'url': 'https://apify.com'}],
-        #     )
-        # ]
-
-        # Exit if no start URLs are provided.
-        # if not start_urls:
-        #     Actor.log.info('No start URLs specified in Actor input, exiting...')
-        #     await Actor.exit()
-
-        # Create a crawler.
-        # crawler = BeautifulSoupCrawler(
-        #     # Limit the crawl to max requests. Remove or increase it for crawling all links.
-        #     max_requests_per_crawl=10,
-        #     # Set the request handler to the request router defined in routes.py.
-        # request_handler=router,
-        # )
-
-        # Run the crawler with the starting requests.
-        # await crawler.run(start_urls)
