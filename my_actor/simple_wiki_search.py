@@ -1,4 +1,3 @@
-import sys
 import requests
 
 ABB_TO_FULL_STATE = {
@@ -56,16 +55,10 @@ ABB_TO_FULL_STATE = {
 ABB_TO_FULL_OFFICE = {"s": "senate", "h": "house", "p": "presidential"}
 
 
-def wiki():
-    if len(sys.argv) < 2:
-        print("usage: python3 simple_wiki_search.py <state>")
-        sys.exit(1)
-    state = sys.argv[1]
-    print(state)
-    title = get_title("Senate", 2026, state)
+def simple_wiki(year, office, state) -> str:
+    title = get_title(office, year, state)
     if title is None:
-        print(f"invalid state: {state}")
-        sys.exit(1)
+        raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
     params = {
         "action": "query",
         "format": "json",
@@ -78,19 +71,16 @@ def wiki():
     headers = {"User-Agent": "ElectionScraper/0.1 (local dev script)"}
     res = requests.get(url, params, headers=headers)
     if res.status_code >= 400:
-        print(f"error code {res.status_code}")
-        print(res.text[:500])
-        sys.exit(1)
+        raise RuntimeError(f"Wikipedia API error {res.status_code}: {res.text[:500]}")
     data = res.json()
-
+    result = ""
     for key in data["query"]["pages"]:
         if key == "-1":
-            print("article is missing")
-            print(data)
-            sys.exit(1)
+            raise RuntimeError(f"article is missing: {title}")
         if "special" in data["query"]["pages"][key]["title"]:
             print("============== IS SPECIAL ==============")
-        print(data["query"]["pages"][key]["extract"])
+        result += data["query"]["pages"][key]["extract"]
+    return result
 
 
 def get_title(office: str, year: int, state: str) -> str | None:
@@ -126,8 +116,3 @@ def check_office(office: str) -> str | None:
     if len(office) == 1:
         return ABB_TO_FULL_OFFICE.get(office)
     return office if office in ABB_TO_FULL_OFFICE.values() else None
-
-
-if __name__ == "__main__":
-    # This block only executes when the script is run directly
-    wiki()

@@ -7,9 +7,9 @@ https://docs.apify.com/sdk/python
 """
 
 from __future__ import annotations
-
 import asyncio
 from apify import Actor, Event
+from .simple_wiki_search import simple_wiki
 
 
 async def main() -> None:
@@ -39,5 +39,13 @@ async def main() -> None:
         year = actor_input.get("year", 2026)
         office = actor_input.get("office", "s")
         state = actor_input["state"]
+
+        try:
+            extract = await asyncio.to_thread(simple_wiki, year, office, state)
+        except Exception:
+            Actor.log.exception("Wikipedia lookup failed, exiting...")
+            await Actor.exit(1)
+            return
+
         # Store the extracted data to the default dataset.
         await Actor.push_data(data)
