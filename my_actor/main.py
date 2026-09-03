@@ -9,7 +9,6 @@ https://docs.apify.com/sdk/python
 from __future__ import annotations
 
 import asyncio
-
 from apify import Actor, Event
 
 
@@ -40,12 +39,5 @@ async def main() -> None:
         year = actor_input.get("year", 2026)
         office = actor_input.get("office", "s")
         state = actor_input["state"]
-
-        data = {
-            "year": year,
-            "office": office,
-            "state": state,
-        }
-
         # Store the extracted data to the default dataset.
         await Actor.push_data(data)
