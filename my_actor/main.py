@@ -7,8 +7,11 @@ https://docs.apify.com/sdk/python
 """
 
 from __future__ import annotations
+
 import asyncio
+
 from apify import Actor, Event
+
 from .simple_wiki_search import handle_simple_wiki
 
 
@@ -48,4 +51,4 @@ async def main() -> None:
             return
 
         # Store the extracted data to the default dataset.
-        await Actor.push_data(data)
+        await Actor.push_data(extract)
