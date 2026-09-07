@@ -9,7 +9,7 @@ https://docs.apify.com/sdk/python
 from __future__ import annotations
 import asyncio
 from apify import Actor, Event
-from .simple_wiki_search import simple_wiki
+from .simple_wiki_search import handle_simple_wiki
 
 
 async def main() -> None:
@@ -41,7 +41,7 @@ async def main() -> None:
         state = actor_input["state"]
 
         try:
-            extract = await asyncio.to_thread(simple_wiki, year, office, state)
+            extract = await asyncio.to_thread(handle_simple_wiki, year, office, state)
         except Exception:
             Actor.log.exception("Wikipedia lookup failed, exiting...")
             await Actor.exit(1)

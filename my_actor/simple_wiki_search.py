@@ -1,61 +1,11 @@
 import requests
+from apify import Actor
+from .us_state_office import ABB_TO_FULL_OFFICE, ABB_TO_FULL_STATE
 
-ABB_TO_FULL_STATE = {
-    "al": "alabama",
-    "ak": "alaska",
-    "az": "arizona",
-    "ar": "arkansas",
-    "ca": "california",
-    "co": "colorado",
-    "ct": "connecticut",
-    "de": "delaware",
-    "fl": "florida",
-    "ga": "georgia",
-    "hi": "hawaii",
-    "id": "idaho",
-    "il": "illinois",
-    "in": "indiana",
-    "ia": "iowa",
-    "ks": "kansas",
-    "ky": "kentucky",
-    "la": "louisiana",
-    "me": "maine",
-    "md": "maryland",
-    "ma": "massachusetts",
-    "mi": "michigan",
-    "mn": "minnesota",
-    "ms": "mississippi",
-    "mo": "missouri",
-    "mt": "montana",
-    "ne": "nebraska",
-    "nv": "nevada",
-    "nh": "new hampshire",
-    "nj": "new jersey",
-    "nm": "new mexico",
-    "ny": "new york",
-    "nc": "north carolina",
-    "nd": "north dakota",
-    "oh": "ohio",
-    "ok": "oklahoma",
-    "or": "oregon",
-    "pa": "pennsylvania",
-    "ri": "rhode island",
-    "sc": "south carolina",
-    "sd": "south dakota",
-    "tn": "tennessee",
-    "tx": "texas",
-    "ut": "utah",
-    "vt": "vermont",
-    "va": "virginia",
-    "wa": "washington",
-    "wv": "west virginia",
-    "wi": "wisconsin",
-    "wy": "wyoming",
-}
-ABB_TO_FULL_OFFICE = {"s": "senate", "h": "house", "p": "presidential"}
+IS_SPECIAL = False
 
 
-def simple_wiki(year, office, state) -> str:
+def handle_simple_wiki(year, office, state) -> str:
     title = get_title(office, year, state)
     if title is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
@@ -70,16 +20,19 @@ def simple_wiki(year, office, state) -> str:
     url = "https://en.wikipedia.org/w/api.php"
     headers = {"User-Agent": "ElectionScraper/0.1 (local dev script)"}
     res = requests.get(url, params, headers=headers)
-    if res.status_code >= 400:
-        raise RuntimeError(f"Wikipedia API error {res.status_code}: {res.text[:500]}")
+    res.raise_for_status()
     data = res.json()
     result = ""
-    for key in data["query"]["pages"]:
-        if key == "-1":
-            raise RuntimeError(f"article is missing: {title}")
-        if "special" in data["query"]["pages"][key]["title"]:
-            print("============== IS SPECIAL ==============")
-        result += data["query"]["pages"][key]["extract"]
+
+    page = data["query"]["pages"]
+    if page.get("-1") is not None:
+        raise RuntimeError(f"article is missing: {title}")
+    page_ids = list(page.keys())
+    page_data = page[page_ids[0]]
+    global IS_SPECIAL
+    IS_SPECIAL = "special" in page_data["title"]
+    result += page_data["extract"]
+    Actor.log.info(f"is_special: {IS_SPECIAL}, extract: {result[:100]}")
     return result
 
 
@@ -90,10 +43,7 @@ def get_title(office: str, year: int, state: str) -> str | None:
     office = check_office(office)
     if not office:
         return None
-    title_state = state[0].upper() + state[1:]
-    title_office = office[0].upper() + office[1:]
-
-    return f"{year}_United_States_{title_office}_election_in_{title_state}"
+    return f"{year}_United_States_{office}_election_in_{state}"
 
 
 def check_state(state: str | None) -> str | None:
@@ -104,7 +54,7 @@ def check_state(state: str | None) -> str | None:
         return None
     if len(state) == 2:
         return ABB_TO_FULL_STATE.get(state)
-    return state if state in ABB_TO_FULL_STATE.values() else None
+    return next((v for v in ABB_TO_FULL_STATE.values() if v.lower() == state), None)
 
 
 def check_office(office: str) -> str | None:
@@ -115,4 +65,4 @@ def check_office(office: str) -> str | None:
         return None
     if len(office) == 1:
         return ABB_TO_FULL_OFFICE.get(office)
-    return office if office in ABB_TO_FULL_OFFICE.values() else None
+    return next((v for v in ABB_TO_FULL_OFFICE.values() if v.lower() == office), None)
