@@ -45,7 +45,7 @@ async def main() -> None:
 
         try:
             extract = await asyncio.to_thread(handle_simple_wiki, year, office, state)
-        except Exception:
+        except Exception:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
             Actor.log.exception("Wikipedia lookup failed, exiting...")
             await Actor.exit(1)
             return
