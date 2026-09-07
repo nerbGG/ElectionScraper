@@ -12,6 +12,8 @@ import asyncio
 
 from apify import Actor, Event
 
+from .simple_wiki_search import handle_simple_wiki
+
 
 async def main() -> None:
     """Define a main entry point for the Apify Actor.
@@ -41,11 +43,12 @@ async def main() -> None:
         office = actor_input.get("office", "s")
         state = actor_input["state"]
 
-        data = {
-            "year": year,
-            "office": office,
-            "state": state,
-        }
+        try:
+            extract = await asyncio.to_thread(handle_simple_wiki, year, office, state)
+        except Exception:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
+            Actor.log.exception("Wikipedia lookup failed, exiting...")
+            await Actor.exit(1)
+            return
 
         # Store the extracted data to the default dataset.
-        await Actor.push_data(data)
+        await Actor.push_data(extract)
