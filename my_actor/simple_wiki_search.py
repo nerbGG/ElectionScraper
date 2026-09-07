@@ -7,6 +7,7 @@ IS_SPECIAL = False
 
 
 def handle_simple_wiki(year, office, state) -> str:
+
     title = get_title(office, year, state)
     if title is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
