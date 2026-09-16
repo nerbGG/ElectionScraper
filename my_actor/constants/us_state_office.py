@@ -50,4 +50,5 @@ ABB_TO_FULL_STATE = {
     "wi": "Wisconsin",
     "wy": "Wyoming",
 }
+
 ABB_TO_FULL_OFFICE = {"s": "Senate", "h": "House", "p": "Presidential"}
