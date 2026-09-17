@@ -1,13 +1,12 @@
-import re
-
 import requests
 from apify import Actor
+from bs4 import BeautifulSoup
 
 from .constants.us_state_office import ABB_TO_FULL_OFFICE, ABB_TO_FULL_STATE
 
 IS_SPECIAL = False
 
-HEADING_RE = re.compile(r"^(=+)\s*(.+?)\s*\1\s*$", re.MULTILINE)
+HEADING_TAGS = ["h2", "h3", "h4", "h5", "h6"]
 KEEP_HEADINGS = {"Nominee", "Declared", "Advanced to runoff"}
 
 
@@ -48,23 +47,25 @@ def check_office(office: str) -> str | None:
 
 def parse_candidates(extract: str) -> list[str]:
     """Extract candidate names from Declared/Advanced to runoff/Nominee headings, dropping the rest."""
-    headings = list(HEADING_RE.finditer(extract))
+    soup = BeautifulSoup(extract, "html.parser")
     candidates = []
-    for i, m in enumerate(headings):
-        name = m.group(2).strip()
-        if name not in KEEP_HEADINGS:
+    for heading in soup.find_all(HEADING_TAGS):
+        if heading.get_text(strip=True) not in KEEP_HEADINGS:
             continue
-        start = m.end()
-        end = headings[i + 1].start() if i + 1 < len(headings) else len(extract)
-        for line in extract[start:end].strip().splitlines():
-            line = line.strip()
-            if line:
-                candidates.append(line.split(",")[0].strip())
+        sibling = heading.find_next_sibling()
+        # Only the immediately-following <ul> counts — an unmarked status change (e.g. a bolded
+        # "Disqualified" paragraph with no proper heading) starts a new <ul>, ending this list.
+        if sibling is None or sibling.name != "ul":
+            continue
+        for li in sibling.find_all("li", recursive=False):
+            name = li.get_text().split(",")[0].strip()
+            if name:
+                candidates.append(name)
     return candidates
 
 
 def handle_simple_wiki(year, office, state) -> str:
-    """Fetch and return the Wikipedia plaintext extract for a given election race."""
+    """Fetch and return the Wikipedia HTML extract for a given election race."""
     title = get_title(office, year, state)
     if title is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
@@ -72,7 +73,6 @@ def handle_simple_wiki(year, office, state) -> str:
         "action": "query",
         "format": "json",
         "prop": "extracts",
-        "explaintext": "1",
         "redirects": "1",
         "titles": title,
     }

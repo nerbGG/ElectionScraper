@@ -75,6 +75,14 @@ class TestParseCandidates:
     def test_no_matching_headings_returns_empty_list(self):
         assert parse_candidates("No headings here at all.") == []
 
+    def test_drops_candidate_after_unmarked_status_change(self):
+        # Regression test for the 2026 Ohio Senate special election page: "Disqualified" was
+        # a bolded paragraph, not a proper heading, so Jeffrey Kanter's <li> ends up in a
+        # second <ul> after it rather than the Nominee heading's own list.
+        candidates = parse_candidates(SAMPLE_EXTRACT)
+        assert "Jeffrey Kanter" not in candidates
+        assert "Disqualified" not in candidates
+
 
 class TestHandleSimpleWiki:
     def test_invalid_state_raises_before_any_request(self):

@@ -50,9 +50,9 @@ async def main() -> None:
             Actor.log.info(extract)
             Actor.log.info("--------------------------------\n")
 
-        except Exception:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
-            Actor.log.exception("Wikipedia lookup failed, exiting...")
-            await Actor.exit(1)
+        except Exception as e:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
+            Actor.log.error(f"Wikipedia lookup failed, exiting...: {e}")
+            await Actor.exit(exit_code=1)
             return
 
         # Store the extracted data to the default dataset.
