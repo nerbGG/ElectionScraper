@@ -197,6 +197,28 @@ apify push --version 0.1 --force
 `python-crawlee-beautifulsoup` Actor template (`name: "my-actor"`, plus `title`/`description`) —
 worth updating before the first real Store-facing push.
 
+## Running tests
+
+Tests live in [tests/](tests/) and use [pytest](https://docs.pytest.org/). Run them from the
+`wikiscraper` directory with the venv active:
+
+```bash
+python -m pytest
+```
+
+Using `-m` (rather than the bare `pytest` command) makes Python add the current directory to
+`sys.path`, which is what lets test files `import my_actor` — without it, imports fail with
+`ModuleNotFoundError: No module named 'my_actor'`.
+
+Other useful invocations:
+- `python -m pytest -v` — verbose, lists each test by name with pass/fail
+- `python -m pytest tests/test_simple_wiki_search.py` — just one file
+- `python -m pytest -k parse_candidates` — only tests whose name matches `parse_candidates`
+- `python -m pytest tests/test_simple_wiki_search.py::TestParseCandidates` — just one test class
+
+The same suite runs in CI on every push/PR via
+[.github/workflows/tests.yml](.github/workflows/tests.yml).
+
 ## Project structure
 
 ```text
@@ -207,11 +229,23 @@ worth updating before the first real Store-facing push.
 ├── dataset_schema.json # Defines how output items are displayed as a table in the Console's
 │                        #   "Output" tab (which fields show as columns, their format)
 └── output_schema.json  # Points the Console's Output tab at the dataset API endpoint
+.github/workflows/
+├── pre-commit.yml       # Runs the pre-commit hook suite (Ruff, whitespace/EOF, secret
+│                        #   scanning) on every push to main and every PR
+├── tests.yml            # Runs `python -m pytest` on every push to main and every PR
+└── push-to-apify.yml    # Pushes a build to Apify when a PR gets the `deploy-to-apify` label
 my_actor/
-├── __main__.py          # Entry point invoked by `python -m my_actor` (see Dockerfile)
-├── main.py               # Actor logic: reads input, will run the Wikipedia fetch/parse
-│                          #   pipeline, and calls Actor.push_data()
-└── routes.py             # Crawlee request routing (scaffolded, not yet wired up)
+├── __init__.py           # Marks my_actor as a package
+├── __main__.py           # Entry point invoked by `python -m my_actor` (see Dockerfile)
+├── main.py               # Actor entry point: reads input, calls the Wikipedia lookup, and
+│                          #   pushes the result via Actor.push_data()
+├── simple_wiki_search.py # Core pipeline: builds the Wikipedia title, fetches the plaintext
+│                          #   extract, and parses out candidates via parse_candidates()
+├── constants/
+│   └── us_state_office.py # State-abbreviation and office-abbreviation lookup tables
+└── py.typed              # PEP 561 marker — declares my_actor ships inline type annotations
+tests/
+└── test_simple_wiki_search.py # Unit tests for simple_wiki_search.py (see "Running tests" above)
 storage/                  # Local-only storage emulating the Apify platform, created by
 │                          #   `apify run`. NOT synced to the cloud — each `apify run` reads/writes
 │                          #   here instead of hitting real Apify storage.
@@ -220,14 +254,19 @@ storage/                  # Local-only storage emulating the Apify platform, cre
 ├── key_value_stores/default/ # Holds INPUT.json (the input for the next `apify run`) plus any
 │                          #   other files/config the Actor reads or writes via Actor.set_value()
 └── request_queues/       # Pending crawl requests (used once the Crawlee pipeline is wired up)
+.pre-commit-config.yaml   # Local git-hook config for the same checks tests.yml/pre-commit.yml run in CI
+.secrets.baseline         # Baseline for the detect-secrets pre-commit hook
+.vscode/settings.json     # Format-on-save config for the Ruff extension (see step 8 above)
 Dockerfile                # Container image definition used when the Actor runs on Apify
-requirements.txt          # Python dependencies
+requirements.txt          # Python dependencies (runtime + dev tooling: pytest, Ruff, pre-commit)
 wiki-tech-spec.md         # Source-of-truth spec: schema, pipeline, data source, known risks
 ```
 
-**Note:** `main.py` currently just echoes the input straight back to the dataset — the actual
-Wikipedia-fetch/parse pipeline described in the spec isn't implemented yet, so a local run right
-now only confirms your input was received, not real candidate data.
+**Note:** `main.py` now runs the real pipeline — it fetches the race's Wikipedia extract and
+parses out candidate names via `parse_candidates()` — but `Actor.push_data()` is currently given
+the raw `list[str]` of names directly, not the `{year, office, state, candidates}` structured
+item described in `.actor/dataset_schema.json` (§ [dataset_schema.json](.actor/dataset_schema.json)).
+Party, status, and bio per candidate (per the spec's output schema) aren't extracted yet either.
 
 ## Resources
 

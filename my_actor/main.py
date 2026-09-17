@@ -25,6 +25,7 @@ async def main() -> None:
     async with Actor:
         # Handle graceful abort - Actor is being stopped by user or platform
         async def on_aborting() -> None:
+            """Persist state and exit promptly when the Actor is stopped."""
             # Persist any state, do any cleanup you need, and terminate the Actor using
             # `await Actor.exit()` explicitly as soon as possible. This will help ensure that
             # the Actor is doing best effort to honor any potential limits on costs of a
@@ -45,9 +46,13 @@ async def main() -> None:
 
         try:
             extract = await asyncio.to_thread(handle_simple_wiki, year, office, state)
-        except Exception:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
-            Actor.log.exception("Wikipedia lookup failed, exiting...")
-            await Actor.exit(1)
+            Actor.log.info("--------RESULT------------------:")
+            Actor.log.info(extract)
+            Actor.log.info("--------------------------------\n")
+
+        except Exception as e:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
+            Actor.log.error(f"Wikipedia lookup failed, exiting...: {e}")
+            await Actor.exit(exit_code=1)
             return
 
         # Store the extracted data to the default dataset.
