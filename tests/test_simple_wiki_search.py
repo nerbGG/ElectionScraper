@@ -9,8 +9,7 @@ from my_actor.simple_wiki_search import (
     handle_simple_wiki,
     parse_candidates,
 )
-
-from .constants.extract_example import SAMPLE_EXTRACT
+from tests.constants.extract_example import SAMPLE_EXTRACT
 
 
 class TestCheckState:
