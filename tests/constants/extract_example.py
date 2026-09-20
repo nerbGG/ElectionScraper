@@ -1,5 +1,6 @@
-# A trimmed but structurally real HTML extract: two-party primary with a Nominee, an
-# eliminated candidate, a withdrawn candidate, a third-party Nominee, and a malformed
+# A trimmed but structurally real HTML extract covering: two-party primary with a Nominee, an
+# eliminated candidate, a withdrawn candidate; a true independent (party should be None); a
+# third-party Nominee nested under "Third-parties and independents"; and a malformed
 # "Disqualified" status (bolded paragraph, not a proper heading) interrupting a candidate
 # list — the real bug found on the 2026 Ohio Senate special election page, where the
 # disqualified candidate's <li> sits in a second, separate <ul> after the bad paragraph.
@@ -17,6 +18,9 @@ SAMPLE_EXTRACT = """<p>The <b>2026 United States Senate election in Michigan</b>
 <h4 data-mw-anchor="Nominee_2">Nominee</h4>
 <ul><li>Mike Rogers, former U.S. representative from Michigan's 8th congressional district</li></ul>
 <h2 data-mw-anchor="Third-parties_and_independents">Third-parties and independents</h2>
+<h3 data-mw-anchor="Independents">Independents</h3>
+<h4 data-mw-anchor="Declared">Declared</h4>
+<ul><li>TJ Stephens, business executive</li></ul>
 <h3 data-mw-anchor="Libertarian_Party">Libertarian Party</h3>
 <h4 data-mw-anchor="Nominee_3">Nominee</h4>
 <ul><li>Lydia Christensen, CEO</li></ul>
