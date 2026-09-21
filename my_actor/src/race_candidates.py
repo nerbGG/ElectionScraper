@@ -48,14 +48,22 @@ def check_office(office: str) -> str | None:
     return next((v for v in ABB_TO_FULL_OFFICE.values() if v.lower() == office), None)
 
 
+def split_name_description(text: str) -> tuple[str, str]:
+    """Split on the first comma, or — if there's none — the first period not preceded by a
+    capital letter, so middle-initial-style abbreviations ("Dan S. Sullivan") aren't split on."""
+    if "," in text:
+        name, _, description = text.partition(",")
+        return name.strip(), description.strip()
+    for i, char in enumerate(text):
+        if char == "." and (i == 0 or not text[i - 1].isupper()):
+            return text[:i].strip(), text[i + 1 :].strip()
+    return text.strip(), ""
+
+
 def append_candidates(candiates_list_elem, candidates: list[object], party: str):
     """Append each <li> in candiates_list_elem as a {name, description, party} dict."""
     for li in candiates_list_elem.find_all("li", recursive=False):
-        list_item = li.get_text().split(",")
-        name = list_item[0].strip()
-        description = ""
-        if len(list_item) > 1:
-            description = list_item[1].strip()
+        name, description = split_name_description(li.get_text())
         if name:
             candidates.append(
                 {"name": name, "description": description, "party": party}
