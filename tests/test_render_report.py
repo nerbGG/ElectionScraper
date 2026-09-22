@@ -63,6 +63,16 @@ class TestRenderRaceReport:
         html = render_race_report(result)
         assert "No candidates found" in html
 
+    def test_no_candidates_with_error_shows_error_message_instead(self):
+        result = {
+            **RESULT,
+            "candidates": [],
+            "error": "No race found for Senate in New York (2026)",
+        }
+        html = render_race_report(result)
+        assert "No race found for Senate in New York (2026)" in html
+        assert "No candidates found" not in html
+
     def test_html_in_candidate_fields_is_escaped(self):
         result = {
             **RESULT,

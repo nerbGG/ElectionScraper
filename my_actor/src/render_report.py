@@ -192,10 +192,11 @@ def render_race_report(result: dict) -> str:
     candidates = result.get("candidates", [])
     count = len(candidates)
     roster = "\n".join(_roster_item(c) for c in candidates)
+    empty_message = result.get("error") or "No candidates found for this race."
     roster_section = (
         roster
         if candidates
-        else '    <p class="empty">No candidates found for this race.</p>'
+        else f'    <p class="empty">{html.escape(empty_message)}</p>'
     )
 
     facts = [
