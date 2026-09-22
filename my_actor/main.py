@@ -12,7 +12,7 @@ import asyncio
 
 from apify import Actor, Event
 
-from .simple_wiki_search import handle_simple_wiki
+from .src.simple_wiki_search import handle_simple_wiki
 
 
 async def main() -> None:

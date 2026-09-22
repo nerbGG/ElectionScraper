@@ -2,13 +2,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from my_actor.src.race_candidates import (
-    check_office,
-    check_state,
-    get_race_candidates,
-    get_title,
-    parse_candidates,
-)
+from my_actor.src.candidates import get_title, parse_candidates
+from my_actor.src.race_candidates import get_race_candidates
+from my_actor.src.utils.normalize_inputs import check_office, check_state
 from tests.constants.extract_example import SAMPLE_EXTRACT
 
 
@@ -50,9 +46,10 @@ class TestCheckOffice:
 
 class TestGetTitle:
     def test_builds_correctly_cased_title(self):
-        assert (
-            get_title("s", 2026, "MI")
-            == "2026_United_States_Senate_election_in_Michigan"
+        assert get_title("s", 2026, "MI") == (
+            "2026_United_States_Senate_election_in_Michigan",
+            "Michigan",
+            "Senate",
         )
 
     def test_invalid_state_returns_none(self):
@@ -141,14 +138,31 @@ class TestGetRaceCandidates:
                 }
             }
         }
-        with patch(
-            "my_actor.src.race_candidates.requests.get", return_value=mock_response
+        mock_dates = {
+            "senate": {
+                "primary_date": "2026-08-04",
+                "primary_runoff": None,
+                "general_election": "2026-11-03",
+            }
+        }
+        with (
+            patch(
+                "my_actor.src.race_candidates.requests.get",
+                return_value=mock_response,
+            ),
+            patch(
+                "my_actor.src.race_candidates.get_election_dates",
+                return_value=mock_dates,
+            ),
         ):
             result = get_race_candidates(2026, "s", "MI")
-        names = [c["name"] for c in result]
+        names = [c["name"] for c in result["candidates"]]
         assert names == [
             "Abdul El-Sayed",
             "Mike Rogers",
             "TJ Stephens",
             "Lydia Christensen",
         ]
+        assert result["election_date"] == "2026-11-03"
+        assert result["primary_date"] == "2026-08-04"
+        assert result["runoff_date"] is None

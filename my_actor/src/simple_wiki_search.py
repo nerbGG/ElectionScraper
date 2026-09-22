@@ -1,5 +1,5 @@
 from .constants.query_modes import QUERY_MODES
-from .src.race_candidates import get_race_candidates
+from .race_candidates import get_race_candidates
 
 
 def handle_simple_wiki(
