@@ -50,9 +50,10 @@ class TestCheckOffice:
 
 class TestGetTitle:
     def test_builds_correctly_cased_title(self):
-        assert (
-            get_title("s", 2026, "MI")
-            == "2026_United_States_Senate_election_in_Michigan"
+        assert get_title("s", 2026, "MI") == (
+            "2026_United_States_Senate_election_in_Michigan",
+            "Michigan",
+            "Senate",
         )
 
     def test_invalid_state_returns_none(self):
@@ -104,7 +105,7 @@ class TestHandleSimpleWiki:
         ):
             handle_simple_wiki(2026, "s", "MI")
 
-    def test_success_returns_parsed_candidates(self):
+    def test_success_returns_structured_result(self):
         mock_response = MagicMock()
         mock_response.json.return_value = {
             "query": {
@@ -117,8 +118,100 @@ class TestHandleSimpleWiki:
                 }
             }
         }
-        with patch(
-            "my_actor.simple_wiki_search.requests.get", return_value=mock_response
+        with (
+            patch(
+                "my_actor.simple_wiki_search.requests.get",
+                return_value=mock_response,
+            ),
+            patch(
+                "my_actor.simple_wiki_search.get_election_dates",
+                return_value={
+                    "senate": {
+                        "primary_date": "2026-08-04",
+                        "primary_runoff": None,
+                        "general_election": "2026-11-03",
+                    }
+                },
+            ),
         ):
             result = handle_simple_wiki(2026, "s", "MI")
-        assert result == ["Abdul El-Sayed", "Mike Rogers", "Lydia Christensen"]
+        assert result == {
+            "year": 2026,
+            "candidates": ["Abdul El-Sayed", "Mike Rogers", "Lydia Christensen"],
+            "office": "Senate",
+            "state": "MI",
+            "state_label": "Michigan",
+            "election_date": "2026-11-03",
+            "primary_date": "2026-08-04",
+            "runoff_date": None,
+            "is_special": False,
+        }
+
+    def test_dates_failure_returns_null_dates_with_candidates(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "query": {
+                "pages": {
+                    "65822720": {
+                        "pageid": 65822720,
+                        "title": "2026 United States Senate election in Michigan",
+                        "extract": SAMPLE_EXTRACT,
+                    }
+                }
+            }
+        }
+        with (
+            patch(
+                "my_actor.simple_wiki_search.requests.get",
+                return_value=mock_response,
+            ),
+            patch(
+                "my_actor.simple_wiki_search.get_election_dates",
+                side_effect=RuntimeError(
+                    "couldn't get the election dates for Michigan (2026): "
+                    "simulated outage"
+                ),
+            ),
+        ):
+            result = handle_simple_wiki(2026, "s", "MI")
+        assert result["candidates"] == [
+            "Abdul El-Sayed",
+            "Mike Rogers",
+            "Lydia Christensen",
+        ]
+        assert result["election_date"] is None
+        assert result["primary_date"] is None
+        assert result["runoff_date"] is None
+
+    def test_full_name_state_input_uppercase_abbreviation(self):
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            "query": {
+                "pages": {
+                    "65822720": {
+                        "pageid": 65822720,
+                        "title": "2026 United States Senate election in Michigan",
+                        "extract": SAMPLE_EXTRACT,
+                    }
+                }
+            }
+        }
+        with (
+            patch(
+                "my_actor.simple_wiki_search.requests.get",
+                return_value=mock_response,
+            ),
+            patch(
+                "my_actor.simple_wiki_search.get_election_dates",
+                return_value={
+                    "senate": {
+                        "primary_date": "2026-08-04",
+                        "primary_runoff": None,
+                        "general_election": "2026-11-03",
+                    }
+                },
+            ),
+        ):
+            result = handle_simple_wiki(2026, "s", "michigan")
+        assert result["state"] == "MI"
+        assert result["state_label"] == "Michigan"

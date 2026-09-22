@@ -1,0 +1,248 @@
+{
+    "updated_at": "2026-09-20T19:50:22+00:00",
+    "Alabama": {
+        "senate": {
+            "primary_date": "2026-05-19",
+            "primary_runoff": "2026-06-16",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Alaska": {
+        "senate": {
+            "primary_date": "2026-08-18",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Arkansas": {
+        "senate": {
+            "primary_date": "2026-03-03",
+            "primary_runoff": "2026-03-31",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Colorado": {
+        "senate": {
+            "primary_date": "2026-06-30",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Delaware": {
+        "senate": {
+            "primary_date": "2026-09-15",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Florida": {
+        "senate": {
+            "primary_date": "2026-08-18",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Georgia": {
+        "senate": {
+            "primary_date": "2026-05-19",
+            "primary_runoff": "2026-06-16",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Idaho": {
+        "senate": {
+            "primary_date": "2026-05-19",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Illinois": {
+        "senate": {
+            "primary_date": "2026-03-17",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Iowa": {
+        "senate": {
+            "primary_date": "2026-06-02",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Kansas": {
+        "senate": {
+            "primary_date": "2026-08-04",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Kentucky": {
+        "senate": {
+            "primary_date": "2026-05-19",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Louisiana": {
+        "senate": {
+            "primary_date": "2026-05-16",
+            "primary_runoff": "2026-06-27",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Maine": {
+        "senate": {
+            "primary_date": "2026-06-09",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Massachusetts": {
+        "senate": {
+            "primary_date": "2026-09-01",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Michigan": {
+        "senate": {
+            "primary_date": "2026-08-04",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Minnesota": {
+        "senate": {
+            "primary_date": "2026-08-11",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Mississippi": {
+        "senate": {
+            "primary_date": "2026-03-10",
+            "primary_runoff": "2026-04-07",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Montana": {
+        "senate": {
+            "primary_date": "2026-06-02",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Nebraska": {
+        "senate": {
+            "primary_date": "2026-05-12",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "New Hampshire": {
+        "senate": {
+            "primary_date": "2026-09-08",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "New Jersey": {
+        "senate": {
+            "primary_date": "2026-06-02",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "New Mexico": {
+        "senate": {
+            "primary_date": "2026-06-02",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "North Carolina": {
+        "senate": {
+            "primary_date": "2026-03-03",
+            "primary_runoff": "2026-05-12",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Ohio": {
+        "senate": {
+            "primary_date": "2026-05-05",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Oklahoma": {
+        "senate": {
+            "primary_date": "2026-06-16",
+            "primary_runoff": "2026-08-25",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Oregon": {
+        "senate": {
+            "primary_date": "2026-05-19",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Rhode Island": {
+        "senate": {
+            "primary_date": "2026-09-09",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "South Carolina": {
+        "senate": {
+            "primary_date": "2026-06-09",
+            "primary_runoff": "2026-06-23",
+            "general_election": "2026-11-03"
+        }
+    },
+    "South Dakota": {
+        "senate": {
+            "primary_date": "2026-06-02",
+            "primary_runoff": "2026-07-28",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Tennessee": {
+        "senate": {
+            "primary_date": "2026-08-06",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Texas": {
+        "senate": {
+            "primary_date": "2026-03-03",
+            "primary_runoff": "2026-05-26",
+            "general_election": "2026-11-03"
+        }
+    },
+    "Virginia": {
+        "senate": {
+            "primary_date": "2026-08-04",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "West Virginia": {
+        "senate": {
+            "primary_date": "2026-05-12",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    },
+    "Wyoming": {
+        "senate": {
+            "primary_date": "2026-08-18",
+            "primary_runoff": null,
+            "general_election": "2026-11-03"
+        }
+    }
+}

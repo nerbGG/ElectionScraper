@@ -2,7 +2,13 @@ import requests
 from apify import Actor
 from bs4 import BeautifulSoup
 
-from .constants.us_state_office import ABB_TO_FULL_OFFICE, ABB_TO_FULL_STATE
+from .get_election_dates import get_election_dates
+from .utils.normalize_inputs import (
+    check_office,
+    check_state,
+    state_abb_to_full,
+    state_full_to_abb,
+)
 
 IS_SPECIAL = False
 
@@ -10,7 +16,7 @@ HEADING_TAGS = ["h2", "h3", "h4", "h5", "h6"]
 KEEP_HEADINGS = {"Nominee", "Declared", "Advanced to runoff"}
 
 
-def get_title(office: str, year: int, state: str) -> str | None:
+def get_title(office: str, year: int, state: str) -> tuple[str, str, str] | None:
     """Build the Wikipedia article title for a race, or None if office/state is invalid."""
     state = check_state(state)
     if not state:
@@ -18,31 +24,7 @@ def get_title(office: str, year: int, state: str) -> str | None:
     office = check_office(office)
     if not office:
         return None
-    return f"{year}_United_States_{office}_election_in_{state}"
-
-
-def check_state(state: str | None) -> str | None:
-    """Normalize a state abbreviation or name to its canonical form, or None if unrecognized."""
-    if not isinstance(state, str):
-        return None
-    state = state.lower().strip()
-    if not state:
-        return None
-    if len(state) == 2:
-        return ABB_TO_FULL_STATE.get(state)
-    return next((v for v in ABB_TO_FULL_STATE.values() if v.lower() == state), None)
-
-
-def check_office(office: str) -> str | None:
-    """Normalize an office abbreviation or name to its canonical form, or None if unrecognized."""
-    if not isinstance(office, str):
-        return None
-    office = office.lower().strip()
-    if not office:
-        return None
-    if len(office) == 1:
-        return ABB_TO_FULL_OFFICE.get(office)
-    return next((v for v in ABB_TO_FULL_OFFICE.values() if v.lower() == office), None)
+    return f"{year}_United_States_{office}_election_in_{state}", state, office
 
 
 def parse_candidates(extract: str) -> list[str]:
@@ -64,11 +46,26 @@ def parse_candidates(extract: str) -> list[str]:
     return candidates
 
 
-def handle_simple_wiki(year, office, state) -> str:
-    """Fetch and return the Wikipedia HTML extract for a given election race."""
-    title = get_title(office, year, state)
-    if title is None:
+def handle_simple_wiki(year, office, state) -> dict:
+    """Fetch a race's Wikipedia article and return the structured result.
+
+    The result carries the parsed candidates, the state's election dates, the
+    normalized state/office, and whether the race is a special election. If the
+    dates lookup fails, the date fields are null and the candidates are still
+    returned.
+    """
+    result = {}
+    title_result = get_title(office, year, state)
+    if title_result is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
+    title, clean_state, clean_office = title_result
+
+    dates = None
+    try:
+        dates = get_election_dates(clean_state, year)
+    except (ValueError, RuntimeError) as e:
+        Actor.log.warning(f"couldn't get election dates: {e}")
+
     params = {
         "action": "query",
         "format": "json",
@@ -93,7 +90,21 @@ def handle_simple_wiki(year, office, state) -> str:
     IS_SPECIAL = "special" in page_data["title"]
 
     text = page_data["extract"]
-    result = parse_candidates(text)
+    candidates = parse_candidates(text)
 
-    Actor.log.info(f"is_special: {IS_SPECIAL}")
+    result["year"] = year
+    result["candidates"] = candidates
+    result["office"] = clean_office
+    if len(state) == 2:
+        result["state"] = state.upper()
+        result["state_label"] = state_abb_to_full(state)
+    else:
+        result["state"] = state_full_to_abb(clean_state)
+        result["state_label"] = clean_state
+
+    result["election_date"] = dates["senate"]["general_election"] if dates else None
+    result["primary_date"] = dates["senate"]["primary_date"] if dates else None
+    result["runoff_date"] = dates["senate"]["primary_runoff"] if dates else None
+    result["is_special"] = IS_SPECIAL
+
     return result
