@@ -1,11 +1,14 @@
-import json
-
 import requests
 from apify import Actor
 from bs4 import BeautifulSoup
 
-from .constants.us_state_office import check_office, check_state
 from .get_election_dates import get_election_dates
+from .utils.normalize_inputs import (
+    check_office,
+    check_state,
+    state_abb_to_full,
+    state_full_to_abb,
+)
 
 IS_SPECIAL = False
 
@@ -21,7 +24,7 @@ def get_title(office: str, year: int, state: str) -> str | None:
     office = check_office(office)
     if not office:
         return None
-    return f"{year}_United_States_{office}_election_in_{state}"
+    return f"{year}_United_States_{office}_election_in_{state}", state, office
 
 
 def parse_candidates(extract: str) -> list[str]:
@@ -45,13 +48,13 @@ def parse_candidates(extract: str) -> list[str]:
 
 def handle_simple_wiki(year, office, state) -> str:
     """Fetch and return the Wikipedia HTML extract for a given election race."""
-    title = get_title(office, year, state)
+    result = {}
+    title, clean_state, clean_office = get_title(office, year, state)
     if title is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
 
     try:
-        dates = get_election_dates(state, year)
-        Actor.log.info(f"{year} Senate election dates for {state}: {json.dumps(dates)}")
+        dates = get_election_dates(clean_state, year)
     except (ValueError, RuntimeError) as e:
         Actor.log.warning(f"couldn't get election dates: {e}")
 
@@ -79,7 +82,21 @@ def handle_simple_wiki(year, office, state) -> str:
     IS_SPECIAL = "special" in page_data["title"]
 
     text = page_data["extract"]
-    result = parse_candidates(text)
+    candidates = parse_candidates(text)
 
-    Actor.log.info(f"is_special: {IS_SPECIAL}")
+    result["year"] = year
+    result["candidates"] = candidates
+    result["office"] = clean_office
+    if len(state) == 2:
+        result["state"] = state
+        result["state_label"] = state_abb_to_full(state)
+    else:
+        result["state"] = state_full_to_abb(clean_state)
+        result["state_label"] = clean_state
+
+    result["election_date"] = dates["senate"]["general_election"]
+    result["primary_date"] = dates["senate"]["primary_date"]
+    result["runoff_date"] = dates["senate"]["primary_runoff"]
+    result["is_special"] = IS_SPECIAL
+
     return result

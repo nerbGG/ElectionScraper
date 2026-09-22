@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-from .constants.us_state_office import check_state
+from .utils.normalize_inputs import check_state
 
 _CONSTANTS_DIR = Path(__file__).parent / "constants"
 
@@ -45,7 +45,7 @@ def get_election_dates(state: str, cycle: int) -> dict:
             f"couldn't get the election dates for {state_name} ({cycle}): "
             f"no Senate race on the ballot that cycle"
         )
-    return {"updated_at": data["updated_at"], state_name: data[state_name]}
+    return data[state_name]
 
 
 def _load_election_dates_file(path: Path) -> dict | None:
