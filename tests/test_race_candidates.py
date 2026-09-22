@@ -114,16 +114,21 @@ class TestGetRaceCandidates:
             get_race_candidates(2026, "s", "ZZ")
         mock_get.assert_not_called()
 
-    def test_missing_article_raises_runtime_error(self):
+    def test_missing_article_returns_graceful_error_result(self):
+        # e.g. a state with no Senate seat up that cycle (no Wikipedia article exists at all) —
+        # this is an expected outcome, not a scrape failure, so it must not raise.
         mock_response = MagicMock()
         mock_response.json.return_value = {"query": {"pages": {"-1": {"missing": ""}}}}
-        with (
-            patch(
-                "my_actor.src.race_candidates.requests.get", return_value=mock_response
-            ),
-            pytest.raises(RuntimeError, match="article is missing"),
+        with patch(
+            "my_actor.src.race_candidates.requests.get", return_value=mock_response
         ):
-            get_race_candidates(2026, "s", "MI")
+            result = get_race_candidates(2026, "s", "MI")
+        assert result["candidates"] == []
+        assert result["is_special"] is False
+        assert "error" in result
+        assert result["year"] == 2026
+        assert result["state"] == "MI"
+        assert result["state_label"] == "Michigan"
 
     def test_success_returns_parsed_candidates(self):
         mock_response = MagicMock()

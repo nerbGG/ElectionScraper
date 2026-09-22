@@ -2,29 +2,5 @@
     "$schema": "https://apify.com/schemas/v1/dataset.ide.json",
     "actorSpecification": 1,
     "fields": {},
-    "views": {
-        "overview": {
-            "title": "Overview",
-            "transformation": {
-                "fields": ["year", "office", "state"]
-            },
-            "display": {
-                "component": "table",
-                "properties": {
-                    "year": {
-                        "label": "Year",
-                        "format": "integer"
-                    },
-                    "office": {
-                        "label": "Office",
-                        "format": "string"
-                    },
-                    "state": {
-                        "label": "State",
-                        "format": "string"
-                    }
-                }
-            }
-        }
-    }
+    "views": {}
 }

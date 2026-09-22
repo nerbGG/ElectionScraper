@@ -180,6 +180,8 @@ Allowed without prompt:
 
 Ask first:
 
+- any bug fix or code change — present the proposed fix (what will change and why) and wait
+  for explicit accept/reject before applying it; do not implement first and explain after
 - npm/pip package installations
 - apify push (deployment to cloud)
 - proxy configuration changes (requires paid plan)

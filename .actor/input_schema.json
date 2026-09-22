@@ -1,7 +1,7 @@
 {
     "$schema": "https://apify.com/schemas/v1/input.ide.json",
     "title": "Python Crawlee BeautifulSoup Scraper",
-    "description": "Note: Additional input fields for year and office configuration are planned but omitted in this version.",
+    "description": "Looks up the current U.S. Senate general election candidates for the state you select, sourced live from Wikipedia. This version is fixed to the 2026 election cycle; configurable year and office inputs are planned for a future release.",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
