@@ -12,6 +12,7 @@ import asyncio
 
 from apify import Actor, Event
 
+from .src.render_report import render_race_report
 from .src.simple_wiki_search import handle_simple_wiki
 
 
@@ -57,3 +58,7 @@ async def main() -> None:
 
         # Store the extracted data to the default dataset.
         await Actor.push_data(extract)
+
+        if isinstance(extract, dict):
+            html_report = render_race_report(extract)
+            await Actor.set_value("OUTPUT", html_report, content_type="text/html")

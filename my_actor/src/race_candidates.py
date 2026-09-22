@@ -24,6 +24,7 @@ def get_race_candidates(year: str, office: str, state: str) -> list[str]:
     if title_result is None:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
     title, clean_state, clean_office = title_result
+    dates = None
     try:
         dates = get_election_dates(clean_state, year)
     except (ValueError, RuntimeError) as e:
@@ -71,5 +72,4 @@ def get_race_candidates(year: str, office: str, state: str) -> list[str]:
     result["is_special"] = IS_SPECIAL
     result["candidates"] = candidates
 
-    Actor.log.info(f"is_special: {IS_SPECIAL}")
     return result
