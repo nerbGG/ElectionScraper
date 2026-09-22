@@ -16,7 +16,7 @@ HEADING_TAGS = ["h2", "h3", "h4", "h5", "h6"]
 KEEP_HEADINGS = {"Nominee", "Declared", "Advanced to runoff"}
 
 
-def get_title(office: str, year: int, state: str) -> str | None:
+def get_title(office: str, year: int, state: str) -> tuple[str, str, str] | None:
     """Build the Wikipedia article title for a race, or None if office/state is invalid."""
     state = check_state(state)
     if not state:
@@ -46,13 +46,21 @@ def parse_candidates(extract: str) -> list[str]:
     return candidates
 
 
-def handle_simple_wiki(year, office, state) -> str:
-    """Fetch and return the Wikipedia HTML extract for a given election race."""
-    result = {}
-    title, clean_state, clean_office = get_title(office, year, state)
-    if title is None:
-        raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
+def handle_simple_wiki(year, office, state) -> dict:
+    """Fetch a race's Wikipedia article and return the structured result.
 
+    The result carries the parsed candidates, the state's election dates, the
+    normalized state/office, and whether the race is a special election. If the
+    dates lookup fails, the date fields are null and the candidates are still
+    returned.
+    """
+    result = {}
+    title_result = get_title(office, year, state)
+    if title_result is None:
+        raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
+    title, clean_state, clean_office = title_result
+
+    dates = None
     try:
         dates = get_election_dates(clean_state, year)
     except (ValueError, RuntimeError) as e:
@@ -88,15 +96,15 @@ def handle_simple_wiki(year, office, state) -> str:
     result["candidates"] = candidates
     result["office"] = clean_office
     if len(state) == 2:
-        result["state"] = state
+        result["state"] = state.upper()
         result["state_label"] = state_abb_to_full(state)
     else:
         result["state"] = state_full_to_abb(clean_state)
         result["state_label"] = clean_state
 
-    result["election_date"] = dates["senate"]["general_election"]
-    result["primary_date"] = dates["senate"]["primary_date"]
-    result["runoff_date"] = dates["senate"]["primary_runoff"]
+    result["election_date"] = dates["senate"]["general_election"] if dates else None
+    result["primary_date"] = dates["senate"]["primary_date"] if dates else None
+    result["runoff_date"] = dates["senate"]["primary_runoff"] if dates else None
     result["is_special"] = IS_SPECIAL
 
     return result

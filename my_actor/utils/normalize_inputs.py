@@ -32,5 +32,5 @@ def state_abb_to_full(state: str) -> str | None:
 def state_full_to_abb(state: str) -> str | None:
     for k in ABB_TO_FULL_STATE:
         if ABB_TO_FULL_STATE[k].lower().strip() == state.lower().strip():
-            return k
+            return k.upper()
     return None

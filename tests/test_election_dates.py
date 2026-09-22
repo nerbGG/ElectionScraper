@@ -239,10 +239,7 @@ class TestGetElectionDates:
             side_effect=AssertionError("network call attempted"),
         ):
             result = get_election_dates("MI", 2026)
-        assert result == {
-            "updated_at": SNAPSHOT["updated_at"],
-            "Michigan": SNAPSHOT["Michigan"],
-        }
+        assert result == SNAPSHOT["Michigan"]
 
     def test_normalizes_state_input(self, constants_dir):
         _write_snapshot(constants_dir)
@@ -251,10 +248,7 @@ class TestGetElectionDates:
             side_effect=AssertionError("network call attempted"),
         ):
             for state in ("MI", "mi", "michigan", "MICHIGAN"):
-                assert get_election_dates(state, 2026) == {
-                    "updated_at": SNAPSHOT["updated_at"],
-                    "Michigan": SNAPSHOT["Michigan"],
-                }
+                assert get_election_dates(state, 2026) == SNAPSHOT["Michigan"]
 
     def test_state_not_on_ballot_raises_without_network(self, constants_dir):
         _write_snapshot(constants_dir)
@@ -275,7 +269,7 @@ class TestGetElectionDates:
         ) as mock_get:
             result = get_election_dates("MI", 2026)
         assert mock_get.call_count == 2
-        assert result["Michigan"]["senate"]["primary_date"] == "2026-08-04"
+        assert result["senate"]["primary_date"] == "2026-08-04"
 
         saved = json.loads(
             constants_dir.joinpath("election_dates_2026.json").read_text()
@@ -323,7 +317,7 @@ class TestGetElectionDates:
             constants_dir.joinpath("election_dates_2026.json").read_text()
         )
         assert isinstance(saved, dict) and "updated_at" in saved
-        assert result["Michigan"]["senate"]["primary_date"] == "2026-08-04"
+        assert result["senate"]["primary_date"] == "2026-08-04"
 
     def test_corrupt_file_triggers_refetch(self, constants_dir):
         constants_dir.joinpath("election_dates_2026.json").write_text("garbage{")
@@ -332,7 +326,7 @@ class TestGetElectionDates:
             side_effect=_mock_api_responses(),
         ):
             result = get_election_dates("MI", 2026)
-        assert result["Michigan"]["senate"]["primary_date"] == "2026-08-04"
+        assert result["senate"]["primary_date"] == "2026-08-04"
 
     def test_api_failure_raises_with_state_in_message(self, constants_dir):
         with (
@@ -378,4 +372,4 @@ class TestGetElectionDates:
             side_effect=AssertionError("network call attempted"),
         ):
             result = get_election_dates("MI", 2026)
-        assert result["Michigan"]["senate"]["primary_date"] == "2026-08-04"
+        assert result["senate"]["primary_date"] == "2026-08-04"
