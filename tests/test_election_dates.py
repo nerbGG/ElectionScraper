@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import requests
 
-from my_actor.get_election_dates import (
+from my_actor.src.election_dates import (
     _align_row,
     _load_election_dates_file,
     _normalize_date,
@@ -62,7 +62,7 @@ def _mock_api_responses():
 
 @pytest.fixture
 def constants_dir(tmp_path, monkeypatch):
-    monkeypatch.setattr("my_actor.get_election_dates._CONSTANTS_DIR", tmp_path)
+    monkeypatch.setattr("my_actor.src.election_dates._CONSTANTS_DIR", tmp_path)
     return tmp_path
 
 
@@ -226,7 +226,7 @@ class TestLoadElectionDatesFile:
 class TestGetElectionDates:
     def test_invalid_state_raises_before_any_request(self, constants_dir):
         with (
-            patch("my_actor.get_election_dates.requests.get") as mock_get,
+            patch("my_actor.src.election_dates.requests.get") as mock_get,
             pytest.raises(ValueError, match="invalid state"),
         ):
             get_election_dates("ZZ", 2026)
@@ -235,7 +235,7 @@ class TestGetElectionDates:
     def test_serves_state_from_file_without_network(self, constants_dir):
         _write_snapshot(constants_dir)
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=AssertionError("network call attempted"),
         ):
             result = get_election_dates("MI", 2026)
@@ -244,7 +244,7 @@ class TestGetElectionDates:
     def test_normalizes_state_input(self, constants_dir):
         _write_snapshot(constants_dir)
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=AssertionError("network call attempted"),
         ):
             for state in ("MI", "mi", "michigan", "MICHIGAN"):
@@ -254,7 +254,7 @@ class TestGetElectionDates:
         _write_snapshot(constants_dir)
         with (
             patch(
-                "my_actor.get_election_dates.requests.get",
+                "my_actor.src.election_dates.requests.get",
                 side_effect=AssertionError("network call attempted"),
             ) as mock_get,
             pytest.raises(RuntimeError, match="no Senate race on the ballot"),
@@ -264,7 +264,7 @@ class TestGetElectionDates:
 
     def test_missing_file_fetches_api_and_writes_file(self, constants_dir):
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=_mock_api_responses(),
         ) as mock_get:
             result = get_election_dates("MI", 2026)
@@ -278,14 +278,14 @@ class TestGetElectionDates:
         assert saved["Michigan"]["senate"]["primary_date"] == "2026-08-04"
 
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=AssertionError("network call attempted"),
         ):
             assert get_election_dates("MI", 2026) == result
 
     def test_fetch_parses_all_rowspan_variants(self, constants_dir):
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=_mock_api_responses(),
         ):
             get_election_dates("MI", 2026)
@@ -309,7 +309,7 @@ class TestGetElectionDates:
             json.dumps([{"state": "Alabama"}])
         )
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=_mock_api_responses(),
         ):
             result = get_election_dates("MI", 2026)
@@ -322,7 +322,7 @@ class TestGetElectionDates:
     def test_corrupt_file_triggers_refetch(self, constants_dir):
         constants_dir.joinpath("election_dates_2026.json").write_text("garbage{")
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=_mock_api_responses(),
         ):
             result = get_election_dates("MI", 2026)
@@ -331,7 +331,7 @@ class TestGetElectionDates:
     def test_api_failure_raises_with_state_in_message(self, constants_dir):
         with (
             patch(
-                "my_actor.get_election_dates.requests.get",
+                "my_actor.src.election_dates.requests.get",
                 side_effect=requests.ConnectionError("simulated outage"),
             ),
             pytest.raises(
@@ -349,7 +349,7 @@ class TestGetElectionDates:
         }
         with (
             patch(
-                "my_actor.get_election_dates.requests.get",
+                "my_actor.src.election_dates.requests.get",
                 return_value=toc_response,
             ),
             pytest.raises(RuntimeError, match="couldn't get the election dates"),
@@ -359,7 +359,7 @@ class TestGetElectionDates:
     def test_fetched_table_without_state_raises_but_saves_file(self, constants_dir):
         with (
             patch(
-                "my_actor.get_election_dates.requests.get",
+                "my_actor.src.election_dates.requests.get",
                 side_effect=_mock_api_responses(),
             ),
             pytest.raises(RuntimeError, match="no Senate race on the ballot"),
@@ -368,7 +368,7 @@ class TestGetElectionDates:
         assert constants_dir.joinpath("election_dates_2026.json").is_file()
 
         with patch(
-            "my_actor.get_election_dates.requests.get",
+            "my_actor.src.election_dates.requests.get",
             side_effect=AssertionError("network call attempted"),
         ):
             result = get_election_dates("MI", 2026)
