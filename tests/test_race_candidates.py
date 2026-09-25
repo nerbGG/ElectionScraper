@@ -1,9 +1,10 @@
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from my_actor.src.candidates import get_title, parse_candidates
-from my_actor.src.race_candidates import get_race_candidates
+from my_actor.src.race_candidates import get_race
 from my_actor.src.utils.normalize_inputs import check_office, check_state
 from tests.constants.extract_example import SAMPLE_EXTRACT
 
@@ -105,13 +106,13 @@ class TestParseCandidates:
         assert candidates["Lydia Christensen"] == "CEO"
 
 
-class TestGetRaceCandidates:
+class TestGetRace:
     def test_invalid_state_raises_before_any_request(self):
         with (
             patch("my_actor.src.race_candidates.requests.get") as mock_get,
             pytest.raises(ValueError, match="invalid state or office"),
         ):
-            get_race_candidates(2026, "s", "ZZ")
+            get_race(2026, "s", "ZZ")
         mock_get.assert_not_called()
 
     def test_missing_article_returns_graceful_error_result(self):
@@ -122,13 +123,13 @@ class TestGetRaceCandidates:
         with patch(
             "my_actor.src.race_candidates.requests.get", return_value=mock_response
         ):
-            result = get_race_candidates(2026, "s", "MI")
-        assert result["candidates"] == []
-        assert result["is_special"] is False
-        assert "error" in result
-        assert result["year"] == 2026
-        assert result["state"] == "MI"
-        assert result["state_label"] == "Michigan"
+            result = get_race(2026, "s", "MI")
+        assert result.candidates == []
+        assert result.is_special is False
+        assert result.error is not None
+        assert result.year == 2026
+        assert result.state == "MI"
+        assert result.state_label == "Michigan"
 
     def test_success_returns_parsed_candidates(self):
         mock_response = MagicMock()
@@ -160,14 +161,14 @@ class TestGetRaceCandidates:
                 return_value=mock_dates,
             ),
         ):
-            result = get_race_candidates(2026, "s", "MI")
-        names = [c["name"] for c in result["candidates"]]
+            result = get_race(2026, "s", "MI")
+        names = [c.name for c in result.candidates]
         assert names == [
             "Abdul El-Sayed",
             "Mike Rogers",
             "TJ Stephens",
             "Lydia Christensen",
         ]
-        assert result["election_date"] == "2026-11-03"
-        assert result["primary_date"] == "2026-08-04"
-        assert result["runoff_date"] is None
+        assert result.election_date == date(2026, 11, 3)
+        assert result.primary_date == date(2026, 8, 4)
+        assert result.runoff_date is None
