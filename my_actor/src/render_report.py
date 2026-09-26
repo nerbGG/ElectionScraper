@@ -1,5 +1,8 @@
 import html
-from datetime import datetime
+from datetime import date
+
+from .models.candidate import Candidate
+from .models.election import Election
 
 _PARTY_COLORS = {
     "Democratic": "#2f5aa8",
@@ -138,15 +141,11 @@ _STYLE = """<style>
 </style>"""
 
 
-def _format_date(value: str | None) -> str:
-    """Convert an ISO date to 'Month D, YYYY'; pass through anything else, or 'Unknown'."""
-    if not value:
+def _format_date(value: date | None) -> str:
+    """Format a date as 'Month D, YYYY', or 'Unknown' if there isn't one."""
+    if value is None:
         return "Unknown"
-    try:
-        parsed = datetime.strptime(value, "%Y-%m-%d")  # noqa: DTZ007
-    except ValueError:
-        return value
-    return f"{parsed:%B} {parsed.day}, {parsed.year}"
+    return f"{value:%B} {value.day}, {value.year}"
 
 
 def _party_color(party: str | None) -> str:
@@ -155,11 +154,11 @@ def _party_color(party: str | None) -> str:
     return _PARTY_COLORS.get(party, _DEFAULT_PARTY_COLOR)
 
 
-def _roster_item(candidate: dict) -> str:
-    name = html.escape(candidate["name"])
-    party_label = html.escape(candidate["party"] or "Independent")
-    color = _party_color(candidate["party"])
-    description = html.escape(candidate["description"])
+def _roster_item(candidate: Candidate) -> str:
+    name = html.escape(candidate.name)
+    party_label = html.escape(candidate.party or "Independent")
+    color = _party_color(candidate.party)
+    description = html.escape(candidate.description)
     description_html = (
         f'<p class="roster-description">{description}</p>' if description else ""
     )
@@ -182,17 +181,14 @@ def _fact(label: str, value: str) -> str:
     </div>"""
 
 
-def render_race_report(result: dict) -> str:
-    """Render a race result dict (as returned by get_race_candidates) as a standalone HTML page."""
-    office = result.get("office") or ""
-    state_label = result.get("state_label") or ""
-    year = result.get("year")
-    title = f"{year} {office} Election — {state_label}"
+def render_race_report(election: Election) -> str:
+    """Render an Election as a standalone HTML page."""
+    title = f"{election.year} {election.office} Election — {election.state_label}"
 
-    candidates = result.get("candidates", [])
+    candidates = election.candidates
     count = len(candidates)
     roster = "\n".join(_roster_item(c) for c in candidates)
-    empty_message = result.get("error") or "No candidates found for this race."
+    empty_message = election.error or "No candidates found for this race."
     roster_section = (
         roster
         if candidates
@@ -200,11 +196,11 @@ def render_race_report(result: dict) -> str:
     )
 
     facts = [
-        _fact("Election Day", _format_date(result.get("election_date"))),
-        _fact("Primary", _format_date(result.get("primary_date"))),
-        _fact("Runoff", _format_date(result.get("runoff_date"))),
+        _fact("Election Day", _format_date(election.election_date)),
+        _fact("Primary", _format_date(election.primary_date)),
+        _fact("Runoff", _format_date(election.runoff_date)),
     ]
-    if result.get("is_special"):
+    if election.is_special:
         facts.append(_fact("Type", "Special election"))
 
     return f"""<!DOCTYPE html>

@@ -13,7 +13,7 @@ import asyncio
 from apify import Actor, Event
 
 from .src.render_report import render_race_report
-from .src.simple_wiki_search import handle_simple_wiki
+from .src.simple_wiki_search import RaceCandidatesResult, handle_simple_wiki
 
 
 async def main() -> None:
@@ -46,9 +46,9 @@ async def main() -> None:
         state = actor_input["state"]
 
         try:
-            extract = await asyncio.to_thread(handle_simple_wiki, year, office, state)
+            result = await asyncio.to_thread(handle_simple_wiki, year, office, state)
             Actor.log.info("--------RESULT------------------:")
-            Actor.log.info(extract)
+            Actor.log.info(result)
             Actor.log.info("--------------------------------\n")
 
         except Exception as e:  # noqa: BLE001 — top-level entry point; log and exit(1) on any failure mode
@@ -56,9 +56,16 @@ async def main() -> None:
             await Actor.exit(exit_code=1)
             return
 
-        # Store the extracted data to the default dataset.
-        await Actor.push_data(extract)
+        if result is None:
+            Actor.log.error(
+                "handle_simple_wiki returned no result (unimplemented query mode)"
+            )
+            await Actor.exit(exit_code=1)
+            return
 
-        if isinstance(extract, dict):
-            html_report = render_race_report(extract)
+        if isinstance(result, RaceCandidatesResult):
+            election_data = result.election.model_dump(mode="json")
+            # Store the extracted data to the default dataset.
+            await Actor.push_data({**election_data, "query_mode": result.query_mode})
+            html_report = render_race_report(result.election)
             await Actor.set_value("OUTPUT", html_report, content_type="text/html")

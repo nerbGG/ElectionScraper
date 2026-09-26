@@ -1,8 +1,12 @@
+from datetime import date
+
 import requests
 from apify import Actor
 
 from .candidates import get_title, parse_candidates
 from .election_dates import get_election_dates
+from .models.candidate import Candidate
+from .models.election import Election
 from .utils.normalize_inputs import (
     state_abb_to_full,
     state_full_to_abb,
@@ -11,7 +15,11 @@ from .utils.normalize_inputs import (
 IS_SPECIAL = False
 
 
-def get_race_candidates(year: str, office: str, state: str) -> dict:
+def _parse_date(value: str | None) -> date | None:
+    return date.fromisoformat(value) if value else None
+
+
+def get_race(year: str, office: str, state: str) -> Election:
     """Fetch a race's Wikipedia article and return the structured result.
 
     The result carries the parsed candidates, the state's election dates, the
@@ -27,22 +35,35 @@ def get_race_candidates(year: str, office: str, state: str) -> dict:
         raise ValueError(f"invalid state or office: state={state!r}, office={office!r}")
     title, clean_state, clean_office = title_result
 
-    result = {"year": year, "office": clean_office}
+    state_code = ""
+    state_label = ""
+
     if len(state) == 2:
-        result["state"] = state.upper()
-        result["state_label"] = state_abb_to_full(state)
+        state_code = state.upper()
+        state_label = state_abb_to_full(state)
     else:
-        result["state"] = state_full_to_abb(clean_state)
-        result["state_label"] = clean_state
+        state_code = state_full_to_abb(clean_state)
+        state_label = clean_state
+
+    election = Election(
+        year=year, office=clean_office, state=state_code, state_label=state_label
+    )
 
     dates = None
     try:
         dates = get_election_dates(clean_state, year)
     except (ValueError, RuntimeError) as e:
         Actor.log.warning(f"couldn't get election dates: {e}")
-    result["election_date"] = dates["senate"]["general_election"] if dates else None
-    result["primary_date"] = dates["senate"]["primary_date"] if dates else None
-    result["runoff_date"] = dates["senate"]["primary_runoff"] if dates else None
+
+    election.election_date = (
+        _parse_date(dates["senate"]["general_election"]) if dates else None
+    )
+    election.primary_date = (
+        _parse_date(dates["senate"]["primary_date"]) if dates else None
+    )
+    election.runoff_date = (
+        _parse_date(dates["senate"]["primary_runoff"]) if dates else None
+    )
 
     params = {
         "action": "query",
@@ -61,23 +82,17 @@ def get_race_candidates(year: str, office: str, state: str) -> dict:
     page = data["query"]["pages"]
     if page.get("-1") is not None:
         Actor.log.warning(f"no Wikipedia article for this race: {title}")
-        result["error"] = (
-            f"No race found for {clean_office} in {result['state_label']} ({year})"
-        )
-        result["is_special"] = False
-        result["candidates"] = []
-        return result
+        election.error = f"No race found for {clean_office} in {state_label} ({year})"
+        election.is_special = False
+        return election
 
     page_ids = list(page.keys())
     page_data = page[page_ids[0]]
 
-    global IS_SPECIAL
-    IS_SPECIAL = "special" in page_data["title"]
-
     text = page_data["extract"]
     candidates = parse_candidates(text)
 
-    result["is_special"] = IS_SPECIAL
-    result["candidates"] = candidates
+    election.is_special = "special" in page_data["title"]
+    election.candidates = [Candidate(**c) for c in candidates]
 
-    return result
+    return election

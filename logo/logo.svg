@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="280" viewBox="0 0 880 280">
+  <title>Wikipedia Election Scraper</title>
+  <style><![CDATA[
+    @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Public+Sans:wght@600;700&display=swap');
+    .eyebrow { font-family: 'Public Sans', -apple-system, sans-serif; font-weight: 600; font-size: 16px; letter-spacing: 0.1em; fill: #8c2f39; }
+    .title { font-family: 'Fraunces', Georgia, 'Times New Roman', serif; font-weight: 600; font-size: 60px; fill: #1c2541; }
+  ]]></style>
+  <rect width="880" height="280" fill="#f1f2f1"/>
+  <g transform="translate(56,50) scale(0.9)">
+    <circle cx="100" cy="100" r="96" fill="#1c2541"/>
+    <circle cx="100" cy="100" r="88" fill="none" stroke="#f1f2f1" stroke-width="1.5" opacity="0.45"/>
+    <circle cx="38" cy="78" r="7" fill="#2f5aa8"/>
+    <rect x="54" y="72" width="108" height="12" rx="6" fill="#f1f2f1"/>
+    <circle cx="38" cy="100" r="7" fill="#8c2f39"/>
+    <rect x="54" y="94" width="82" height="12" rx="6" fill="#f1f2f1"/>
+    <circle cx="38" cy="122" r="7" fill="#a67c1e"/>
+    <rect x="54" y="116" width="58" height="12" rx="6" fill="#f1f2f1"/>
+  </g>
+  <text x="272" y="110" class="eyebrow">WIKIPEDIA-SOURCED</text>
+  <text x="270" y="172" class="title">Election Scraper</text>
+</svg>
