@@ -23,7 +23,7 @@ jobs:
         uses: apify/push-actor-action@v1
         with:
           token: ${{ secrets.APIFY_TOKEN }}
-          actor-id: nerb1x/wiki-elections-scraper
+          actor-id: nerb1x/wiki-elections-api
           build-tag: pr-${{ github.event.pull_request.number }}
 
       - name: Comment Build Link on PR
