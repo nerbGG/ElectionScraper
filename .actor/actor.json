@@ -2,8 +2,8 @@
     "$schema": "https://apify.com/schemas/v1/actor.ide.json",
     "version": "1.2",
     "actorSpecification": 1,
-    "name": "wiki-elections-scraper",
-    "title": "Wikipedia Election Scraper",
+    "name": "wiki-elections-api",
+    "title": "Wikipedia Election Api",
     "description": "Looks up U.S. Senate general election candidates by state — name, party, status, and short bio — sourced live from Wikipedia. Currently fixed to the 2026 general election cycle; upcoming versions will add configurable year and office inputs, plus additional query modes for browsing all races in a state.",
     "buildTag": "latest",
     "meta": {
