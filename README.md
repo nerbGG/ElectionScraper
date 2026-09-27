@@ -1,4 +1,4 @@
-# Wikipedia Election Scraper
+# Wiki Election Api
 
 Wikipedia publishes the full candidate lineup for every U.S. Senate race, but each state's page
 is laid out a little differently — two-party primaries, third-party and independent sections,
@@ -120,7 +120,7 @@ succeeds — `candidates` comes back empty and `error` explains why, instead of 
 Run it over the API and get the rows back in one call:
 
 ```bash
-curl -X POST "https://api.apify.com/v2/acts/YOUR_USERNAME~wiki-elections-scraper/run-sync-get-dataset-items?token=YOUR_TOKEN" \
+curl -X POST "https://api.apify.com/v2/acts/YOUR_USERNAME~wiki-elections-api/run-sync-get-dataset-items?token=YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"state": "MI"}'
 ```
@@ -131,7 +131,7 @@ From Python:
 from apify_client import ApifyClient
 
 client = ApifyClient("YOUR_TOKEN")
-run = client.actor("YOUR_USERNAME/wiki-elections-scraper").call(
+run = client.actor("YOUR_USERNAME/wiki-elections-api").call(
     run_input={"state": "MI"}
 )
 for item in client.dataset(run["defaultDatasetId"]).iterate_items():
@@ -144,7 +144,7 @@ Give an AI agent the Actor over MCP:
 {
     "mcpServers": {
         "apify": {
-            "url": "https://mcp.apify.com/?actors=YOUR_USERNAME/wiki-elections-scraper"
+            "url": "https://mcp.apify.com/?actors=YOUR_USERNAME/wiki-elections-api"
         }
     }
 }
