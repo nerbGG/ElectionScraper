@@ -1,276 +1,214 @@
-# Wikipedia Election Scraper (Apify Actor)
+# Wikipedia Election Scraper
 
-An [Apify Actor](https://apify.com/actors) that looks up a U.S. Senate race by state, office,
-and election cycle, and returns the current candidate list (name, party, status, short bio)
-sourced live from Wikipedia. It's built to eventually be sold on the Apify Store to developers
-and researchers who need normalized election-candidate data without building their own
-Wikipedia-parsing pipeline.
+Wikipedia publishes the full candidate lineup for every U.S. Senate race, but each state's page
+is laid out a little differently — two-party primaries, third-party and independent sections,
+write-in candidates, blanket-primary states — so reading it by hand means checking dozens of
+page structures one state at a time. This Actor takes a state and returns one structured record
+for that state's Senate race: the candidates on the ballot (name, party, short bio), the
+election/primary/runoff dates, and whether it's a special election — sourced live from
+Wikipedia.
 
-The current build target is the `race_candidates` query mode only (U.S. Senate, 2026 cycle).
-Two additional query modes — an all-elections-in-a-state lookup and a candidate-name search —
-are fully designed but intentionally deferred. See [wiki-tech-spec.md](wiki-tech-spec.md) for
-the full spec, data-source notes, and known risks/limitations.
+## What it does
 
-## Prerequisites
+- Returns one record per Senate race, with the full candidate roster — name, party, and short
+  bio — parsed out of Wikipedia's own article text
+- Detects candidates and party affiliation across every layout Wikipedia currently uses for a
+  2026 Senate race page: two-party primaries, third-party/independent sections, write-in
+  candidates, and blanket-primary (top-four) states
+- Resolves the real election, primary, and runoff dates for the race from Wikipedia's own
+  election-dates table
+- Flags special elections (`is_special`)
+- Handles a state with no Senate race on the ballot that cycle gracefully — the run succeeds
+  with an `error` field and an empty candidate list, instead of failing
+- Also renders a standalone HTML report of the result, saved alongside the JSON dataset
 
-- **Node.js** (18+) and npm — needed to install the Apify CLI
-- **Python** 3.11+ — needed to run the Actor itself
+## Use cases
 
-## Getting started
+| You need to                                            | How this Actor does it                                                      |
+|---------------------------------------------------------|-------------------------------------------------------------------------------|
+| Track who's running in your state's Senate race         | Pass your state and read `candidates`                                        |
+| Know exactly when to vote                                | Read `election_date`, `primary_date`, `runoff_date`                          |
+| Build a voter-info tool without parsing Wikipedia yourself | Get structured `name`/`party`/`description` per candidate instead of raw wikitext |
+| Watch for late-entry or withdrawn candidates             | Schedule the run and diff `candidates` between runs                          |
+| Summarize a race for a newsletter or report              | Feed `candidates` and the dates to a model over MCP                          |
+| Handle a state with no Senate race that cycle            | Check the `error` field instead of the run failing                           |
 
-### 1. Clone the repo
+## Quick start
+
+1. Click **Try for free**.
+2. Set **State** to the two-letter US state code (e.g. `MI`, `OH`, `TX`).
+3. Click **Start**. The result appears within seconds.
+4. Export as JSON, CSV, Excel, or XML, or read the dataset over the API.
+
+This version is fixed to the 2026 U.S. Senate general election cycle — configurable year/office
+inputs and additional query modes are on the roadmap (see [getting-started.md](getting-started.md)).
+
+## Input
+
+| Field   | Type                     | Default | What it controls                              |
+|---------|--------------------------|---------|-------------------------------------------------|
+| `state` | string (one of 50 US states) | `MI` | The state whose 2026 Senate race to look up |
+
+```json
+{
+    "state": "MI"
+}
+```
+
+## Output
+
+One dataset item per run.
+
+| Field group | Fields                                                        |
+|-------------|----------------------------------------------------------------|
+| Identity    | `year`, `office`, `state`, `state_label`, `query_mode`          |
+| Candidates  | `candidates` (each: `name`, `description`, `party`)             |
+| Dates       | `election_date`, `primary_date`, `runoff_date`                  |
+| Status      | `is_special`, `error`                                           |
+
+```json
+{
+    "year": 2026,
+    "office": "Senate",
+    "state": "MI",
+    "state_label": "Michigan",
+    "election_date": "2026-11-03",
+    "primary_date": "2026-08-04",
+    "runoff_date": null,
+    "is_special": false,
+    "error": null,
+    "candidates": [
+        {
+            "name": "Abdul El-Sayed",
+            "description": "former Wayne County health director (2023–2025) and candidate for governor in 2018",
+            "party": "Democratic"
+        },
+        {
+            "name": "Mike Rogers",
+            "description": "former U.S. representative from Michigan's 8th congressional district (2001–2015) and nominee for U.S. Senate in 2024",
+            "party": "Republican"
+        }
+    ],
+    "query_mode": "race_candidates"
+}
+```
+
+A standalone HTML report of the same result is also saved to the run's key-value store
+(`OUTPUT`), linked from the Output tab.
+
+For a state with no Senate race on the ballot that cycle (e.g. New York in 2026), the run still
+succeeds — `candidates` comes back empty and `error` explains why, instead of the run failing:
+
+```json
+{
+    "year": 2026,
+    "office": "Senate",
+    "state": "NY",
+    "state_label": "New York",
+    "election_date": null,
+    "primary_date": null,
+    "runoff_date": null,
+    "is_special": false,
+    "error": "No race found for Senate in New York (2026)",
+    "candidates": [],
+    "query_mode": "race_candidates"
+}
+```
+
+## Integrations
+
+Run it over the API and get the rows back in one call:
 
 ```bash
-git clone https://github.com/nerbGG/ElectionScraper.git
-cd ElectionScraper
+curl -X POST "https://api.apify.com/v2/acts/YOUR_USERNAME~wiki-elections-scraper/run-sync-get-dataset-items?token=YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"state": "MI"}'
 ```
 
-### 2. Install Node.js
+From Python:
 
-The Apify CLI's npm install method (step 3) needs Node.js and npm on your machine first.
-Download and run the installer from [nodejs.org](https://nodejs.org) (LTS version), or use a
-version manager — [nvm](https://github.com/nvm-sh/nvm) on macOS/Linux,
-[nvm-windows](https://github.com/coreybutler/nvm-windows) on Windows. Verify it installed
-correctly:
+```python
+from apify_client import ApifyClient
 
-```bash
-node --version
-npm --version
+client = ApifyClient("YOUR_TOKEN")
+run = client.actor("YOUR_USERNAME/wiki-elections-scraper").call(
+    run_input={"state": "MI"}
+)
+for item in client.dataset(run["defaultDatasetId"]).iterate_items():
+    print(item["candidates"])
 ```
 
-If you'd rather skip Node.js entirely, the Apify CLI also has a standalone install script
-(macOS/Linux/Windows) and a Homebrew formula — see step 3.
+Give an AI agent the Actor over MCP:
 
-### 3. Install the Apify CLI
-
-```bash
-npm install -g apify-cli
+```json
+{
+    "mcpServers": {
+        "apify": {
+            "url": "https://mcp.apify.com/?actors=YOUR_USERNAME/wiki-elections-scraper"
+        }
+    }
+}
 ```
 
-Other install methods (Homebrew, a standalone install script with no Node.js required) are
-listed in the [Apify CLI installation docs](https://docs.apify.com/cli/docs/installation).
-Verify it installed correctly:
+Schedules run it on any cron, webhooks fire when a run finishes, and platform integrations push
+the dataset to Google Sheets, Slack, Airtable, Zapier, or your own endpoint.
 
-```bash
-apify --version
-```
+## Cost
 
-### 4. Log in to Apify
+Pricing for this Actor hasn't been finalized in Apify Console yet — check the **Pricing** tab on
+the Store listing for the current model (pay-per-result, pay-per-event, or a free/rental tier).
 
-```bash
-apify login
-```
+## Troubleshooting
 
-This opens an interactive flow to authenticate your Apify account and stores the credentials
-locally (`~/.apify/auth.json`) for use by every other `apify` command below. To log in
-non-interactively instead (e.g. in CI), pass a token: `apify login --token <your-api-token>`.
+| Issue                                                  | Solution                                                                                     |
+|----------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `error` is set / `candidates` is empty                   | That state has no Senate race in the 2026 cycle — not every state votes for Senate every cycle. Check which states are actually up in 2026. |
+| Party or description looks off for one candidate         | Wikipedia's page layout varies by state — most known variants (primaries, third parties, write-ins, blanket primaries) are handled, but an unusual layout can still slip through. Open an issue with the state. |
+| The run fails outright (not a graceful `error` field)     | Likely an unexpected Wikipedia API issue (page renamed, API outage) rather than "no race" — check the run log. |
+| I need more than one state                                | Today the Actor takes a single `state` per run — schedule it per state, or call it once per state, to cover a portfolio of states. |
 
-### 5. Create a Python virtual environment
+## FAQ
 
-```bash
-python -m venv .venv
-```
+**Does Wikipedia have a public API?**
+Yes. This Actor isn't selling API access — it gives you structured, per-candidate records
+(name, party, short bio) instead of raw wikitext, handles the page-layout differences between
+states for you, resolves the real election dates, and adds Apify's scheduling/integrations
+around it.
 
-Activate it:
+**What states are covered?**
+All 50, but only for a cycle where that state actually has a Senate race on the ballot — a
+state with none returns a graceful `error` result rather than data.
 
-```bash
-# macOS/Linux
-source .venv/bin/activate
+**Why don't I see a different year or office?**
+Today the Actor is fixed to the 2026 U.S. Senate general election. Configurable year/office
+inputs and additional query modes (all races in a state, candidate name search) are on the
+roadmap — see [getting-started.md](getting-started.md).
 
-# Windows (PowerShell)
-.venv\Scripts\Activate.ps1
-```
+**Can I get this data in Python?**
+Yes, with the `apify-client` package as shown above. It returns parsed JSON.
 
-### 6. Install dependencies
+**Can I get the data into Excel or Google Sheets?**
+Yes. Export the dataset as XLSX or CSV, or connect the Google Sheets integration so each run
+appends to a sheet.
 
-```bash
-pip install -r requirements.txt
-```
+**Can an AI agent call this Actor?**
+Yes. Add it to an MCP client with the config above.
 
-### 7. Install the pre-commit git hook
+**Is it legal to scrape Wikipedia?**
+Wikipedia's content is openly licensed (CC BY-SA) and its API is built for exactly this kind of
+reuse. This Actor reads only public candidate and election information already published there.
 
-```bash
-pre-commit install
-```
+## Changelog
 
-This wires up the hooks in [.pre-commit-config.yaml](.pre-commit-config.yaml) to run
-automatically on `git commit` (Ruff lint/format, whitespace/EOF checks, secret scanning). It's a
-one-time, per-clone setup step — installing the `pre-commit` package via step 6 does not do this
-on its own. The same checks also run in CI on every push/PR
-([.github/workflows/pre-commit.yml](.github/workflows/pre-commit.yml)), so skipping this step
-just means you'll find out about failures from CI instead of locally.
+- **1.2** — Added a standalone HTML report per run, alongside the JSON dataset.
+- **1.1** — Actor metadata cleanup (title, description, input schema description).
+- **1.0** — First public-ready release: full 50-state coverage, candidate name/party/description
+  parsing across every known Wikipedia page layout (primaries, third parties/independents,
+  write-ins, blanket primaries), real election/primary/runoff dates, and graceful handling of
+  states with no race that cycle.
+- **0.x** — Internal development builds.
 
-### 8. Install the Ruff extension (recommended)
+## Feedback
 
-Install the [Ruff extension](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
-(`charliermarsh.ruff`) in VS Code. It lints and formats Python using the same tool as the
-`ruff-check`/`ruff-format` pre-commit hooks (§ [.pre-commit-config.yaml](.pre-commit-config.yaml)),
-so what you see in the editor matches what runs at commit time. Format-on-save for `.py` files
-is already configured in this repo's [.vscode/settings.json](.vscode/settings.json) — no
-further setup needed once the extension is installed.
-
-### 9. Run the Actor locally
-
-```bash
-apify run --input '{"year": 2026, "office": "s", "state": "MI"}'
-```
-
-Input fields (defined in [.actor/input_schema.json](.actor/input_schema.json)):
-
-| Field    | Type    | Notes                                                              |
-|----------|---------|----------------------------------------------------------------------|
-| `year`   | integer | Election cycle. Defaults to `2026`.                                 |
-| `office` | string  | `"s"` (Senate), `"p"` (Presidential), or `"h"` (House).              |
-| `state`  | string  | Currently limited to `"MA"`, `"MI"`, `"OK"` — full 50-state support is pending the state-code crosswalk described in the spec. |
-
-Useful flags:
-- `apify run` (no `--input`) — reuses whatever's already saved in `storage/key_value_stores/default/INPUT.json`
-- `apify run --purge --input '{...}'` — wipes local storage (dataset/key-value store/request queue) before the run, so output from a previous run doesn't linger
-    - ex: `apify run --input '{"year": 2026, "office": "s", "state": "MI"}'`
-- `apify run --input-file ./some-input.json` — read input from a file instead of inline JSON
-
-### 10. Push to Apify
-
-Once your changes are ready, deploy the current code to the Apify platform:
-
-```bash
-apify push
-```
-
-This uploads the Actor per the settings in [.actor/actor.json](.actor/actor.json) and kicks off
-a build. Pass `--no-wait-for-finish` to return immediately instead of waiting for the build to
-complete. See [Managing Apify versions](#managing-apify-versions) below for choosing which
-version/tag a push goes to.
-
-## Managing Apify versions
-
-This section covers how the **Apify platform** tracks this Actor's versions and builds when you
-`apify push`/`apify pull` — a separate concept from this repo's own git history.
-
-> **Not the same as the spec's v1–v4.** Apify's `version` field (`.actor/actor.json`, format
-> `MAJOR.MINOR`, e.g. `0.1`) tracks *deployment/build history on the platform*.
-> [wiki-tech-spec.md](wiki-tech-spec.md)'s `v1`–`v4` track *feature scope* (Senate-only → all
-> offices → `state_all` → `candidate_search`). These two numbering schemes are independent and
-> won't stay in sync — shipping the spec's "v2" feature set does **not** mean the Apify version
-> should become `2.0` (that jump is reserved for a breaking change, see below, not a feature
-> addition).
-
-**Version format:** `version` in `.actor/actor.json` is `MAJOR.MINOR` only — there's no patch
-slot at that level (e.g. `"0.1"`, `"1.0"`, not `"0.1.2"`). Every build gets its own
-auto-incrementing `MAJOR.MINOR.BUILD` number (e.g. `1.2.345`), and multiple versions (`0.1`,
-`0.2`, ...) can exist on the platform at the same time, each with its own independent sequence
-of builds.
-
-**Pushing/pulling a specific version:**
-- `apify push` reads `version` from `.actor/actor.json` by default. Override it per-push with
-  `-v`/`--version=<value>` without editing the file.
-- `-f`/`--force` overrides a newer remote version if you need to push backwards or sideways.
-- `-b`/`--build-tag=<value>` tags the resulting build (see next section).
-- `apify pull -v <value>` fetches a specific version's code from the platform; without `-v`, it
-  pulls the highest version.
-
-**Build tags:** the default tag is `latest`, and each push under the same version
-auto-increments the build number (e.g. `0.1.1`, `0.1.2`, ...). Note that a tag is assigned when
-a build is *created* — Apify's docs don't document a way to retroactively move `latest` onto a
-build that was pushed earlier without a tag.
-
-**The workflow used in this project:** push intermediate builds freely while iterating, and once a batch of changes is actually ready, do one final `apify push` to update the version number (either Major or minor). In the apify console, run options let you pick which build/tag to run, and the Actor's Settings tab lets you update its default version.
-
-**When to bump the version:** for non-breaking, iterative changes, keep the same `MAJOR.MINOR`
-and let the build number auto-increment on each push. Bump `MAJOR` for a breaking change (e.g.
-`1.0` → `2.0`). Apify's own guidance on exactly when to bump `MINOR` specifically is thin —
-treat it as a judgment call, not a hard rule.
-
-```bash
-# Push the current code as version 0.1 (first real candidate build — the "0.1" here is
-# unrelated to the spec's "v1", see disambiguation note above)
-apify push --version 0.1
-
-# Pull the code for a specific platform version
-apify pull --version 0.1
-
-# Force-push over a newer remote version (use sparingly)
-apify push --version 0.1 --force
-```
-
-**Note:** `.actor/actor.json` still has template placeholder values from the original
-`python-crawlee-beautifulsoup` Actor template (`name: "my-actor"`, plus `title`/`description`) —
-worth updating before the first real Store-facing push.
-
-## Running tests
-
-Tests live in [tests/](tests/) and use [pytest](https://docs.pytest.org/). Run them from the
-`wikiscraper` directory with the venv active:
-
-```bash
-python -m pytest
-```
-
-Using `-m` (rather than the bare `pytest` command) makes Python add the current directory to
-`sys.path`, which is what lets test files `import my_actor` — without it, imports fail with
-`ModuleNotFoundError: No module named 'my_actor'`.
-
-Other useful invocations:
-- `python -m pytest -v` — verbose, lists each test by name with pass/fail
-- `python -m pytest tests/test_simple_wiki_search.py` — just one file
-- `python -m pytest -k parse_candidates` — only tests whose name matches `parse_candidates`
-- `python -m pytest tests/test_simple_wiki_search.py::TestParseCandidates` — just one test class
-
-The same suite runs in CI on every push/PR via
-[.github/workflows/tests.yml](.github/workflows/tests.yml).
-
-## Project structure
-
-```text
-.actor/
-├── actor.json          # Actor config: name, version, storage/schema references, Dockerfile path
-├── input_schema.json   # Defines the Actor's input fields, types, and defaults — also renders
-│                        #   the input form in the Apify Console
-├── dataset_schema.json # Defines how output items are displayed as a table in the Console's
-│                        #   "Output" tab (which fields show as columns, their format)
-└── output_schema.json  # Points the Console's Output tab at the dataset API endpoint
-.github/workflows/
-├── pre-commit.yml       # Runs the pre-commit hook suite (Ruff, whitespace/EOF, secret
-│                        #   scanning) on every push to main and every PR
-├── tests.yml            # Runs `python -m pytest` on every push to main and every PR
-└── push-to-apify.yml    # Pushes a build to Apify when a PR gets the `deploy-to-apify` label
-my_actor/
-├── __init__.py           # Marks my_actor as a package
-├── __main__.py           # Entry point invoked by `python -m my_actor` (see Dockerfile)
-├── main.py               # Actor entry point: reads input, calls the Wikipedia lookup, and
-│                          #   pushes the result via Actor.push_data()
-├── simple_wiki_search.py # Core pipeline: builds the Wikipedia title, fetches the plaintext
-│                          #   extract, and parses out candidates via parse_candidates()
-├── constants/
-│   └── us_state_office.py # State-abbreviation and office-abbreviation lookup tables
-└── py.typed              # PEP 561 marker — declares my_actor ships inline type annotations
-tests/
-└── test_simple_wiki_search.py # Unit tests for simple_wiki_search.py (see "Running tests" above)
-storage/                  # Local-only storage emulating the Apify platform, created by
-│                          #   `apify run`. NOT synced to the cloud — each `apify run` reads/writes
-│                          #   here instead of hitting real Apify storage.
-├── datasets/default/     # Every item passed to `Actor.push_data()` lands here as JSON —
-│                          #   this is the Actor's actual output
-├── key_value_stores/default/ # Holds INPUT.json (the input for the next `apify run`) plus any
-│                          #   other files/config the Actor reads or writes via Actor.set_value()
-└── request_queues/       # Pending crawl requests (used once the Crawlee pipeline is wired up)
-.pre-commit-config.yaml   # Local git-hook config for the same checks tests.yml/pre-commit.yml run in CI
-.secrets.baseline         # Baseline for the detect-secrets pre-commit hook
-.vscode/settings.json     # Format-on-save config for the Ruff extension (see step 8 above)
-Dockerfile                # Container image definition used when the Actor runs on Apify
-requirements.txt          # Python dependencies (runtime + dev tooling: pytest, Ruff, pre-commit)
-wiki-tech-spec.md         # Source-of-truth spec: schema, pipeline, data source, known risks
-```
-
-**Note:** `main.py` now runs the real pipeline — it fetches the race's Wikipedia extract and
-parses out candidate names via `parse_candidates()` — but `Actor.push_data()` is currently given
-the raw `list[str]` of names directly, not the `{year, office, state, candidates}` structured
-item described in `.actor/dataset_schema.json` (§ [dataset_schema.json](.actor/dataset_schema.json)).
-Party, status, and bio per candidate (per the spec's output schema) aren't extracted yet either.
-
-## Resources
-
-- [wiki-tech-spec.md](wiki-tech-spec.md) — full spec for this Actor
-- [Apify CLI reference](https://docs.apify.com/cli/docs/reference)
-- [Apify Python SDK documentation](https://docs.apify.com/sdk/python)
-- [Crawlee for Python documentation](https://crawlee.dev/python/docs/quick-start)
+Found a state whose Wikipedia layout parses incorrectly, or a race that's missing data? Open an
+issue on the issues with the state and what you expected.
