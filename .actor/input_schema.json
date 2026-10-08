@@ -8,7 +8,7 @@
         "office": {
             "title": "office",
             "type": "string",
-            "description": "Office for the election",
+            "description": "Office for the election (Senate, Govenor, Presidential)",
             "editor": "select",
             "prefill": "S",
             "enum": [
@@ -135,6 +135,7 @@
         }
     },
     "required": [
-        "state"
+        "state",
+        "office"
     ]
 }
