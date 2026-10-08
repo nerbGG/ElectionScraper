@@ -30,15 +30,21 @@ def get_title(office: str, year: int, state: str) -> tuple[str, str, str] | None
     return title_string, state_name, office_name
 
 
+def _capitalize_first(text: str) -> str:
+    """Uppercase just the first character, leaving the rest untouched (unlike str.capitalize(),
+    which would wrongly lowercase things like the "S" in "U.S. representative")."""
+    return text[:1].upper() + text[1:]
+
+
 def split_name_description(text: str) -> tuple[str, str]:
     """Split on the first comma, or — if there's none — the first period not preceded by a
     capital letter, so middle-initial-style abbreviations ("Dan S. Sullivan") aren't split on."""
     if "," in text:
         name, _, description = text.partition(",")
-        return name.strip(), description.strip()
+        return name.strip(), _capitalize_first(description.strip())
     for i, char in enumerate(text):
         if char == "." and (i == 0 or not text[i - 1].isupper()):
-            return text[:i].strip(), text[i + 1 :].strip()
+            return text[:i].strip(), _capitalize_first(text[i + 1 :].strip())
     return text.strip(), ""
 
 

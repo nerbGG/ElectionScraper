@@ -6,7 +6,7 @@
     "schemaVersion": 1,
     "properties": {
         "office": {
-            "title": "office",
+            "title": "Office",
             "type": "string",
             "description": "Office for the election (Senate, Govenor, Presidential)",
             "editor": "select",
