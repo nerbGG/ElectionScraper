@@ -51,4 +51,6 @@ ABB_TO_FULL_STATE = {
     "wy": "Wyoming",
 }
 
-ABB_TO_FULL_OFFICE = {"s": "Senate", "h": "House", "p": "Presidential"}
+ABB_TO_FULL_OFFICE = {"s": "Senate", "g": "Governor", "p": "Presidential"}
+
+ALL_OFFICES_SUPPORTED = {"SENATE": "S", "GOVERNOR": "G", "PRESIDENTIAL": "P"}

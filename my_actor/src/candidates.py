@@ -1,8 +1,9 @@
 from bs4 import BeautifulSoup
 
+from .constants.us_state_office import ALL_OFFICES_SUPPORTED
 from .utils.normalize_inputs import (
-    check_office,
-    check_state,
+    normalize_office,
+    normalize_state,
 )
 
 HEADING_TAGS = ["h2", "h3", "h4", "h5", "h6"]
@@ -14,13 +15,25 @@ THIRD_PARTY_SECTION_HINT = "third-part"
 
 def get_title(office: str, year: int, state: str) -> tuple[str, str, str] | None:
     """Build the Wikipedia article title for a race, or None if office/state is invalid."""
-    state = check_state(state)
-    if not state:
+    state_name = normalize_state(state)
+    if not state_name:
         return None
-    office = check_office(office)
-    if not office:
+    office_name = normalize_office(office)
+    if not office_name:
         return None
-    return f"{year}_United_States_{office}_election_in_{state}", state, office
+    title_string = ""
+
+    if office == ALL_OFFICES_SUPPORTED["GOVERNOR"]:
+        title_string = f"{year}_{state_name}_gubernatorial_election"
+    else:
+        title_string = f"{year}_United_States_{office_name}_election_in_{state_name}"
+    return title_string, state_name, office_name
+
+
+def _capitalize_first(text: str) -> str:
+    """Uppercase just the first character, leaving the rest untouched (unlike str.capitalize(),
+    which would wrongly lowercase things like the "S" in "U.S. representative")."""
+    return text[:1].upper() + text[1:]
 
 
 def split_name_description(text: str) -> tuple[str, str]:
@@ -28,10 +41,10 @@ def split_name_description(text: str) -> tuple[str, str]:
     capital letter, so middle-initial-style abbreviations ("Dan S. Sullivan") aren't split on."""
     if "," in text:
         name, _, description = text.partition(",")
-        return name.strip(), description.strip()
+        return name.strip(), _capitalize_first(description.strip())
     for i, char in enumerate(text):
         if char == "." and (i == 0 or not text[i - 1].isupper()):
-            return text[:i].strip(), text[i + 1 :].strip()
+            return text[:i].strip(), _capitalize_first(text[i + 1 :].strip())
     return text.strip(), ""
 
 
@@ -45,6 +58,57 @@ def append_candidates(candiates_list_elem, candidates: list[object], party: str)
             )
 
 
+def reached_another_party(tag) -> bool:
+    """True if `tag` marks a real party-section boundary we've wandered into.
+    h4+ status headings (e.g. "Eliminated in primary", "Withdrew after nomination") can
+    coincidentally contain boundary-like wording and must not count — only h2/h3 can be a
+    boundary. The suffix checked is level-specific: "... primary"/"... convention" boundaries
+    only ever appear at h2 in practice, while "... Party"/"Independents" boundaries (the
+    third-party wrapper's own sub-headings) only ever appear at h3 — a sub-heading like
+    "Campaign and convention" (h3, nested under a "... convention" h2) must not be mistaken
+    for another h2-level boundary.
+    """
+    header_text = tag.get_text(strip=True)
+    if tag.name == "h2":
+        return (
+            header_text.endswith((" primary", " convention"))
+            or header_text == "Independents"
+        )
+    if tag.name == "h3":
+        return header_text.endswith(" Party") or header_text == "Independents"
+    return False
+
+
+def normalize_party(raw_label: str) -> str:
+    """Clean up a party label parsed from heading text. Republican/Democratic headings can
+    carry extra qualifier words (e.g. "Special Republican primary", "Democratic nominating
+    convention") that aren't part of the party name — normalize those two to their canonical
+    name. Leave any other party's label as-is (the "text before party/primary/convention" the
+    heading actually used)."""
+    lowered = raw_label.lower()
+    if "republican" in lowered:
+        return "Republican"
+    if "democratic" in lowered:
+        return "Democrat"
+    return raw_label
+
+
+def find_candidates_list_elem(header_elem):
+    """Walk forward through header_elem's sibling headings looking for a Nominee/Declared/etc.
+    heading, returning the <ul> right after it, or None if we hit another party's section first."""
+    candidates_list_elem = None
+    for sub_header in header_elem.find_next_siblings(HEADING_TAGS):
+        if reached_another_party(sub_header):
+            break
+        sub_header_text = sub_header.get_text(strip=True)
+        if sub_header_text in KEEP_HEADINGS:
+            next_sibling = sub_header.find_next_sibling()
+            if next_sibling.name == "ul":
+                candidates_list_elem = next_sibling
+            break
+    return candidates_list_elem
+
+
 def parse_candidates(extract: str) -> list[object]:
     """Extract candidates (name, description, party) from Declared/Advanced to runoff/Nominee headings, dropping the rest."""
     soup = BeautifulSoup(extract, "html.parser")
@@ -55,18 +119,22 @@ def parse_candidates(extract: str) -> list[object]:
             # Some states (e.g. Oklahoma) give Independents their own top-level h2, structured
             # just like a major party's "X primary" section, instead of nesting it as an h3
             # under a third-party wrapper section (e.g. Michigan's "Third-parties and independents").
-            if header.endswith(" primary") or header == "Independents":
-                party = (
-                    None
-                    if header == "Independents"
-                    else header.removesuffix(" primary")
-                )
-                sub_header = headerElem.find_next_sibling(HEADING_TAGS)
-                while sub_header.get_text(strip=True) not in KEEP_HEADINGS:
-                    sub_header = sub_header.find_next_sibling(HEADING_TAGS)
-                    continue
-                candiates_list_elem = sub_header.find_next_sibling()
-                append_candidates(candiates_list_elem, candidates, party)
+
+            if header.endswith((" primary", " convention")) or header == "Independents":
+                if header == "Independents":
+                    party = None
+                else:
+                    raw_label = header.removesuffix(" primary").removesuffix(
+                        " convention"
+                    )
+                    party = normalize_party(raw_label)
+                candidates_list_elem = find_candidates_list_elem(headerElem)
+                if (
+                    candidates_list_elem is not None
+                    and candidates_list_elem.name == "ul"
+                ):
+                    append_candidates(candidates_list_elem, candidates, party)
+
             elif THIRD_PARTY_SECTION_HINT in header.lower() or header == "Candidates":
                 # "Candidates" as a bare h2 covers Alaska's top-four blanket-primary format,
                 # where every party (not just minor ones) is an h3 under one shared heading.
@@ -81,24 +149,16 @@ def parse_candidates(extract: str) -> list[object]:
                         party = (
                             None
                             if third_party_header == "Independents"
-                            else third_party_header
+                            else normalize_party(third_party_header)
                         )
-                        sub_header = third_party_header_elem.find_next_sibling(
-                            HEADING_TAGS
+                        candidates_list_elem = find_candidates_list_elem(
+                            third_party_header_elem
                         )
-                        # Stop at the next h2/h3 — that's a different section, meaning this
-                        # party has no Nominee/Declared/Advanced to runoff heading of its own.
-                        while (
-                            sub_header is not None
-                            and sub_header.name not in ("h2", "h3")
-                            and sub_header.get_text(strip=True) not in KEEP_HEADINGS
+                        if (
+                            candidates_list_elem is not None
+                            and candidates_list_elem.name == "ul"
                         ):
-                            sub_header = sub_header.find_next_sibling(HEADING_TAGS)
-                            continue
-                        if sub_header is None or sub_header.name in ("h2", "h3"):
-                            continue
-                        candiates_list_elem = sub_header.find_next_sibling()
-                        append_candidates(candiates_list_elem, candidates, party)
+                            append_candidates(candidates_list_elem, candidates, party)
             elif header == "Write-in Candidates":
                 # No Nominee/Declared h4 here — "Candidates" h3 is followed directly by the
                 # <ul>, unlike every other section (confirmed live on West Virginia's page).

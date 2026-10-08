@@ -42,7 +42,7 @@ async def main() -> None:
         actor_input = await Actor.get_input() or {}
 
         year = actor_input.get("year", 2026)
-        office = actor_input.get("office", "s")
+        office = actor_input["office"]
         state = actor_input["state"]
 
         try:

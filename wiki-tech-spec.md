@@ -305,6 +305,23 @@ is now a paying customer's broken result, not an internal admin-reviewed data po
   Confirmed live: New Hampshire's Republican section had a "Did not file" subsection missing
   its `====` markup entirely (appeared as bare text). The parser needs a fallback for
   malformed/missing headings, not pure heading-boundary parsing.
+- **Party names parsed from heading text can carry non-party qualifier words.** Confirmed live:
+  South Carolina's original Republican nominee died after being nominated, triggering a second
+  "Special Republican primary" section. `party = header.removesuffix(" primary")` takes the
+  whole heading as the party name, so the candidate's `party` comes back as `"Special
+  Republican"` instead of `"Republican"`. Not yet fixed — needs a qualifier-prefix strip (e.g.
+  "Special "/"Initial ") before trusting heading text as a clean party name.
+- **A party's nominee can be replaced by a secondary process (convention, re-vote) nested under
+  unrelated-looking headings.** Confirmed live: Maine's original Democratic primary winner
+  withdrew after nomination; the real nominee was chosen later under a separate "Democratic
+  nominating convention" heading, with narrative headings ("Platner's withdrawal") in between.
+  `find_candidates_list_elem`'s forward search only stops at `h2`/`h3` headings whose *text*
+  also matches a party-boundary pattern (ends with "primary"/"Party", or is "Independents") —
+  since neither intervening heading matches that pattern, the search correctly continues
+  through them and finds the real nominee. This works today, but it's incidental rather than a
+  principled "this is a replacement-nominee section" detection — a differently-worded
+  convention/withdrawal page could use heading text that happens to match the boundary pattern
+  and stop the search early again.
 - **Disambiguation risk**: `"{state} Senate election"` (state legislature) vs `"United States
   Senate election in {state}"` (federal) are different pages with similar names — confirmed
   live for Michigan and Florida. Title construction must always use the precise federal

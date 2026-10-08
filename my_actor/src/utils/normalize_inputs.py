@@ -1,7 +1,7 @@
 from ..constants.us_state_office import ABB_TO_FULL_OFFICE, ABB_TO_FULL_STATE
 
 
-def check_state(state: str | None) -> str | None:
+def normalize_state(state: str | None) -> str | None:
     """Normalize a state abbreviation or name to its canonical form, or None if unrecognized."""
     if not isinstance(state, str):
         return None
@@ -13,7 +13,7 @@ def check_state(state: str | None) -> str | None:
     return next((v for v in ABB_TO_FULL_STATE.values() if v.lower() == state), None)
 
 
-def check_office(office: str) -> str | None:
+def normalize_office(office: str) -> str | None:
     """Normalize an office abbreviation or name to its canonical form, or None if unrecognized."""
     if not isinstance(office, str):
         return None

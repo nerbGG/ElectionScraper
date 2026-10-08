@@ -18,7 +18,7 @@ def _election(**overrides) -> Election:
         "error": None,
         "candidates": [
             Candidate(
-                name="Abdul El-Sayed", description="health director", party="Democratic"
+                name="Abdul El-Sayed", description="health director", party="Democrat"
             ),
             Candidate(name="TJ Stephens", description="", party=None),
         ],
@@ -35,7 +35,7 @@ class TestRenderRaceReport:
     def test_includes_each_candidate_name_and_party(self):
         html = render_race_report(_election())
         assert "Abdul El-Sayed" in html
-        assert "Democratic" in html
+        assert "Democrat" in html
         assert "TJ Stephens" in html
 
     def test_null_party_renders_as_independent(self):

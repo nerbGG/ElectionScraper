@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-from .utils.normalize_inputs import check_state
+from .utils.normalize_inputs import normalize_state
 
 _CONSTANTS_DIR = Path(__file__).parent / "constants"
 
@@ -25,7 +25,7 @@ def get_election_dates(state: str, cycle: int) -> dict:
     the network. Only a missing or unusable file triggers a live API fetch,
     which also rewrites the file.
     """
-    state_name = check_state(state)
+    state_name = normalize_state(state)
     if state_name is None:
         raise ValueError(f"invalid state: {state!r}")
 
@@ -112,7 +112,7 @@ def _fetch_election_dates_from_api(cycle: int) -> dict:
     covered: dict[int, tuple[int, str]] = {}
     for row in rows[1:]:
         label = _parse_state_cell(row[0])
-        state = check_state(label.removesuffix(" (special)"))
+        state = normalize_state(label.removesuffix(" (special)"))
         if state is None or state in results:
             raise RuntimeError(f"unrecognized or duplicate state in table: {label!r}")
         aligned = _align_row(label, row[1:], covered)

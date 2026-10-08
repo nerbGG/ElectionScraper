@@ -1,9 +1,14 @@
 # A trimmed but structurally real HTML extract covering: two-party primary with a Nominee, an
 # eliminated candidate, a withdrawn candidate; a true independent (party should be None); a
-# third-party Nominee nested under "Third-parties and independents"; and a malformed
+# third-party Nominee nested under "Third-parties and independents"; a malformed
 # "Disqualified" status (bolded paragraph, not a proper heading) interrupting a candidate
 # list — the real bug found on the 2026 Ohio Senate special election page, where the
-# disqualified candidate's <li> sits in a second, separate <ul> after the bad paragraph.
+# disqualified candidate's <li> sits in a second, separate <ul> after the bad paragraph; and a
+# primary whose original nominee withdrew, replaced via a nominating convention — the real
+# pattern confirmed live on the 2026 Maine Senate race (Graham Platner withdrew after winning
+# the Democratic primary; Troy Jackson was chosen at a later convention instead). The
+# convention section's own "Campaign and convention" sub-heading is a deliberate decoy: it
+# coincidentally ends in " convention" too, but isn't itself a section boundary.
 SAMPLE_EXTRACT = """<p>The <b>2026 United States Senate election in Michigan</b> will be held.</p>
 <h2 data-mw-anchor="Democratic_primary">Democratic primary</h2>
 <h3 data-mw-anchor="Candidates">Candidates</h3>
@@ -26,4 +31,14 @@ SAMPLE_EXTRACT = """<p>The <b>2026 United States Senate election in Michigan</b>
 <ul><li>Lydia Christensen, CEO</li></ul>
 <p><b>Disqualified</b></p>
 <ul><li>Jeffrey Kanter, healthcare consultant</li></ul>
+<h2 data-mw-anchor="Green_primary">Green primary</h2>
+<h3 data-mw-anchor="Candidates_3">Candidates</h3>
+<h4 data-mw-anchor="Withdrawn_3">Withdrawn</h4>
+<ul><li>Pat Rivera, former city council member</li></ul>
+<h2 data-mw-anchor="Rivera's_withdrawal">Rivera's withdrawal</h2>
+<h2 data-mw-anchor="Green_nominating_convention">Green nominating convention</h2>
+<h3 data-mw-anchor="Campaign_and_convention">Campaign and convention</h3>
+<h3 data-mw-anchor="Candidates_4">Candidates</h3>
+<h4 data-mw-anchor="Nominee_4">Nominee</h4>
+<ul><li>Sam Okafor, state senator</li></ul>
 """
