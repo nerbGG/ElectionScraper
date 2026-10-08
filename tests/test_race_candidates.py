@@ -5,44 +5,44 @@ import pytest
 
 from my_actor.src.candidates import get_title, parse_candidates
 from my_actor.src.race_candidates import get_race
-from my_actor.src.utils.normalize_inputs import check_office, check_state
+from my_actor.src.utils.normalize_inputs import normalize_office, normalize_state
 from tests.constants.extract_example import SAMPLE_EXTRACT
 
 
 class TestCheckState:
     def test_valid_abbreviation(self):
-        assert check_state("MI") == "Michigan"
+        assert normalize_state("MI") == "Michigan"
 
     def test_valid_full_name_any_case(self):
-        assert check_state("michigan") == "Michigan"
+        assert normalize_state("michigan") == "Michigan"
 
     def test_unknown_abbreviation_returns_none(self):
-        assert check_state("ZZ") is None
+        assert normalize_state("ZZ") is None
 
     def test_unknown_name_returns_none(self):
-        assert check_state("Atlantis") is None
+        assert normalize_state("Atlantis") is None
 
     def test_non_string_returns_none(self):
-        assert check_state(123) is None
-        assert check_state(None) is None
+        assert normalize_state(123) is None
+        assert normalize_state(None) is None
 
     def test_blank_returns_none(self):
-        assert check_state("") is None
-        assert check_state("   ") is None
+        assert normalize_state("") is None
+        assert normalize_state("   ") is None
 
 
 class TestCheckOffice:
     def test_valid_abbreviation(self):
-        assert check_office("s") == "Senate"
+        assert normalize_office("s") == "Senate"
 
     def test_valid_full_name_any_case(self):
-        assert check_office("Senate") == "Senate"
+        assert normalize_office("Senate") == "Senate"
 
     def test_unknown_returns_none(self):
-        assert check_office("x") is None
+        assert normalize_office("x") is None
 
     def test_non_string_returns_none(self):
-        assert check_office(123) is None
+        assert normalize_office(123) is None
 
 
 class TestGetTitle:
@@ -68,6 +68,7 @@ class TestParseCandidates:
             "Mike Rogers",
             "TJ Stephens",
             "Lydia Christensen",
+            "Sam Okafor",
         ]
 
     def test_drops_eliminated_and_withdrawn(self):
@@ -88,7 +89,7 @@ class TestParseCandidates:
 
     def test_assigns_major_party_from_h2_primary_heading(self):
         candidates = {c["name"]: c["party"] for c in parse_candidates(SAMPLE_EXTRACT)}
-        assert candidates["Abdul El-Sayed"] == "Democratic"
+        assert candidates["Abdul El-Sayed"] == "Democrat"
         assert candidates["Mike Rogers"] == "Republican"
 
     def test_assigns_third_party_from_h3_heading(self):
@@ -104,6 +105,23 @@ class TestParseCandidates:
             c["name"]: c["description"] for c in parse_candidates(SAMPLE_EXTRACT)
         }
         assert candidates["Lydia Christensen"] == "CEO"
+
+    def test_finds_convention_nominee_after_withdrawn_primary_winner(self):
+        # Regression test for the 2026 Maine Senate race: Graham Platner withdrew after
+        # winning the Democratic primary, and the real nominee (Troy Jackson) was chosen later
+        # at a separate nominating convention. The primary's own "Withdrawn" candidate must be
+        # dropped, and the search must reach the convention's Nominee despite a decoy
+        # sub-heading ("Campaign and convention") that coincidentally also ends in " convention".
+        names = [c["name"] for c in parse_candidates(SAMPLE_EXTRACT)]
+        assert "Pat Rivera" not in names
+        assert "Sam Okafor" in names
+
+    def test_convention_nominee_gets_the_right_party(self):
+        # Only the literal " convention" suffix is stripped for non-R/D parties, so "Green
+        # nominating convention" becomes "Green nominating" (not just "Green") — matching the
+        # same "leave as-is" behavior already used for e.g. "Libertarian Party".
+        candidates = {c["name"]: c["party"] for c in parse_candidates(SAMPLE_EXTRACT)}
+        assert candidates["Sam Okafor"] == "Green nominating"
 
 
 class TestGetRace:
@@ -168,6 +186,7 @@ class TestGetRace:
             "Mike Rogers",
             "TJ Stephens",
             "Lydia Christensen",
+            "Sam Okafor",
         ]
         assert result.election_date == date(2026, 11, 3)
         assert result.primary_date == date(2026, 8, 4)

@@ -5,10 +5,10 @@ from .models.candidate import Candidate
 from .models.election import Election
 
 _PARTY_COLORS = {
-    "Democratic": "#2f5aa8",
+    "Democrat": "#2f5aa8",
     "Republican": "#a3372f",
-    "Libertarian Party": "#a67c1e",
-    "Green Party": "#2f7a52",
+    "Libertarian": "#a67c1e",
+    "Green": "#2f7a52",
     "Write in": "#5b6472",
 }
 _DEFAULT_PARTY_COLOR = "#6a4f8c"
@@ -151,7 +151,7 @@ def _format_date(value: date | None) -> str:
 def _party_color(party: str | None) -> str:
     if party is None:
         return _INDEPENDENT_COLOR
-    return _PARTY_COLORS.get(party, _DEFAULT_PARTY_COLOR)
+    return _PARTY_COLORS.get(party.removesuffix(" Party"), _DEFAULT_PARTY_COLOR)
 
 
 def _roster_item(candidate: Candidate) -> str:
