@@ -8,7 +8,7 @@
         "office": {
             "title": "Office",
             "type": "string",
-            "description": "Office for the election (Senate, Govenor, Presidential)",
+            "description": "Office of the election (Senate, Govenor, Presidential)",
             "editor": "select",
             "prefill": "S",
             "enum": [
@@ -25,7 +25,7 @@
         "state": {
             "title": "State",
             "type": "string",
-            "description": "US state for the election",
+            "description": "US state of the election",
             "editor": "select",
             "prefill": "MI",
             "enum": [
