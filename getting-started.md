@@ -108,7 +108,7 @@ further setup needed once the extension is installed.
 ### 9. Run the Actor locally
 
 ```bash
-apify run --input '{"state": "MI"}'
+apify run --input '{"state": "MI", "office": "S"}'
 ```
 
 Input fields (defined in [.actor/input_schema.json](.actor/input_schema.json)):

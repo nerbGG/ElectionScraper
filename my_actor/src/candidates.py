@@ -7,7 +7,13 @@ from .utils.normalize_inputs import (
 )
 
 HEADING_TAGS = ["h2", "h3", "h4", "h5", "h6"]
-KEEP_HEADINGS = {"Nominee", "Declared", "Advanced to runoff", "Advanced to general"}
+KEEP_HEADINGS = {
+    "Nominee",
+    "Declared",
+    "Declared Write-In",
+    "Advanced to runoff",
+    "Advanced to general",
+}
 # Matches both "Third-parties and independents" (Michigan) and "Other third-party and
 # independent candidates" (Ohio) — exact wording for this section varies by state.
 THIRD_PARTY_SECTION_HINT = "third-part"
@@ -70,9 +76,9 @@ def reached_another_party(tag) -> bool:
     """
     header_text = tag.get_text(strip=True)
     if tag.name == "h2":
-        return (
-            header_text.endswith((" primary", " convention"))
-            or header_text == "Independents"
+        return header_text.endswith((" primary", " convention")) or header_text in (
+            "Independents",
+            "Independent",
         )
     if tag.name == "h3":
         return header_text.endswith(" Party") or header_text == "Independents"
@@ -120,8 +126,11 @@ def parse_candidates(extract: str) -> list[object]:
             # just like a major party's "X primary" section, instead of nesting it as an h3
             # under a third-party wrapper section (e.g. Michigan's "Third-parties and independents").
 
-            if header.endswith((" primary", " convention")) or header == "Independents":
-                if header == "Independents":
+            if header.endswith((" primary", " convention")) or header in (
+                "Independents",
+                "Independent",
+            ):
+                if header in ("Independents", "Independent"):
                     party = None
                 else:
                     raw_label = header.removesuffix(" primary").removesuffix(
@@ -154,6 +163,10 @@ def parse_candidates(extract: str) -> list[object]:
                         candidates_list_elem = find_candidates_list_elem(
                             third_party_header_elem
                         )
+                        if candidates_list_elem is None:
+                            next_sibling = third_party_header_elem.find_next_sibling()
+                            if next_sibling is not None and next_sibling.name == "ul":
+                                candidates_list_elem = next_sibling
                         if (
                             candidates_list_elem is not None
                             and candidates_list_elem.name == "ul"
